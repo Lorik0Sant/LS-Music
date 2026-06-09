@@ -270,13 +270,13 @@ export default function App(): JSX.Element {
                 className={settings.yandex.mode === 'stream' ? 'seg-on' : ''}
                 onClick={() => patch({ yandex: { ...settings.yandex, mode: 'stream' } })}
               >
-                Поток (Плюс)
+                В оверлее (рекомендуется)
               </button>
               <button
                 className={settings.yandex.mode === 'app' ? 'seg-on' : ''}
                 onClick={() => patch({ yandex: { ...settings.yandex, mode: 'app' } })}
               >
-                В приложении (без Плюса)
+                Через приложение Яндекса
               </button>
             </div>
           </div>
