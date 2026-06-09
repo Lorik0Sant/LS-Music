@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { DeviceAuthInfo, ProviderId, Settings } from '../shared/types'
 import { bus } from './bus'
 import { loadSettings, saveSettings } from './config'
@@ -138,6 +138,9 @@ export function registerIpc(): void {
   ipcMain.handle('queue:list', () => queue.list())
   ipcMain.handle('queue:skip', () => queue.skip())
   ipcMain.handle('queue:clear', () => queue.clear())
+  ipcMain.handle('queue:remove', (_e, id: string) => queue.remove(id))
+  ipcMain.handle('queue:move', (_e, id: string, dir: -1 | 1) => queue.move(id, dir))
+  ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('queue:request', (_e, query: string) =>
     queue.addRequest(query, 'тест')
   )

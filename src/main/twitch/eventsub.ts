@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws'
 import { bus } from '../bus'
 import { loadSettings } from '../config'
+import { twitchSilentLogin } from '../oauth'
 import { setStatus } from '../status'
 import { fetchSelf, validateToken } from './auth'
 
@@ -12,6 +13,7 @@ class TwitchEventSub {
   private ws: WebSocket | null = null
   private sessionId: string | null = null
   private manualClose = false
+  private reconnectTimer: NodeJS.Timeout | null = null
 
   async connect(): Promise<void> {
     const s = loadSettings().twitch
@@ -20,10 +22,14 @@ class TwitchEventSub {
 
     setStatus({ twitch: 'connecting' })
     if (!(await validateToken())) {
-      setStatus({ twitch: 'error' })
-      throw new Error('Токен Twitch недействителен — авторизуйтесь заново')
+      // Token expired — try a silent refresh before giving up.
+      const refreshed = await twitchSilentLogin()
+      if (!refreshed || !(await validateToken())) {
+        setStatus({ twitch: 'error' })
+        throw new Error('Токен Twitch недействителен — войдите заново')
+      }
     }
-    if (!s.userId) await fetchSelf()
+    if (!loadSettings().twitch.userId) await fetchSelf()
 
     this.manualClose = false
     this.openSocket(EVENTSUB_URL)
@@ -39,9 +45,18 @@ class TwitchEventSub {
         setStatus({ twitch: 'disconnected', twitchUser: null })
       } else {
         setStatus({ twitch: 'error' })
-        bus.warn('EventSub соединение закрыто')
+        bus.warn('EventSub соединение закрыто — переподключаюсь…')
+        this.scheduleReconnect()
       }
     })
+  }
+
+  private scheduleReconnect(): void {
+    if (this.manualClose || this.reconnectTimer) return
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null
+      this.connect().catch((err) => bus.warn(`Переподключение Twitch: ${(err as Error).message}`))
+    }, 8000)
   }
 
   private async onMessage(data: string): Promise<void> {
@@ -73,7 +88,8 @@ class TwitchEventSub {
       this.onNotification(msg)
     } else if (type === 'revocation') {
       setStatus({ twitch: 'error' })
-      bus.warn('EventSub: подписка отозвана Twitch')
+      bus.warn('EventSub: подписка отозвана Twitch — переподключаюсь…')
+      this.scheduleReconnect()
     }
   }
 
@@ -116,6 +132,10 @@ class TwitchEventSub {
 
   disconnect(): void {
     this.manualClose = true
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     this.ws?.close()
     this.ws = null
     this.sessionId = null

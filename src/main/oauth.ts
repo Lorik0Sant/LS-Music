@@ -23,21 +23,35 @@ export const TWITCH_REDIRECT = 'http://localhost'
  * once it matches `isDone`. Works for both implicit (token in #fragment) and
  * authorization-code (?code=) flows — we just sniff the navigation URLs.
  */
-function openLoginWindow(authUrl: string, isDone: (url: string) => boolean): Promise<string> {
+function openLoginWindow(
+  authUrl: string,
+  isDone: (url: string) => boolean,
+  opts: { show?: boolean; timeoutMs?: number } = {}
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const win = new BrowserWindow({
       width: 520,
       height: 720,
       title: 'Вход',
+      show: opts.show !== false,
       autoHideMenuBar: true,
       webPreferences: { nodeIntegration: false, contextIsolation: true, partition: 'persist:oauth' }
     })
     let settled = false
+    let timer: NodeJS.Timeout | null = null
     const finish = (url: string): void => {
       if (settled) return
       settled = true
+      if (timer) clearTimeout(timer)
       resolve(url)
       win.destroy()
+    }
+    const fail = (msg: string): void => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      reject(new Error(msg))
+      if (!win.isDestroyed()) win.destroy()
     }
     const check = (url: string): void => {
       if (!settled && isDone(url)) finish(url)
@@ -50,6 +64,7 @@ function openLoginWindow(authUrl: string, isDone: (url: string) => boolean): Pro
     win.on('closed', () => {
       if (!settled) reject(new Error('Окно входа закрыто'))
     })
+    if (opts.timeoutMs) timer = setTimeout(() => fail('Тайм-аут входа'), opts.timeoutMs)
     win.loadURL(authUrl)
   })
 }
@@ -85,20 +100,25 @@ export function twitchClientId(): string {
   return (loadSettings().twitch.clientId || DEFAULT_TWITCH_CLIENT_ID).trim()
 }
 
+function twitchAuthUrl(forceVerify: boolean): string {
+  const clientId = twitchClientId()
+  const scope = 'channel:read:redemptions'
+  return (
+    `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT)}` +
+    `&response_type=token&scope=${encodeURIComponent(scope)}` +
+    (forceVerify ? '&force_verify=true' : '')
+  )
+}
+
 export async function twitchLogin(): Promise<void> {
   const clientId = twitchClientId()
   if (!clientId) throw new Error('Укажите Twitch Client ID (dev.twitch.tv)')
   // Persist clientId so the rest of the app (EventSub) uses the same one.
   patchSettings({ twitch: { ...loadSettings().twitch, clientId } })
 
-  const scope = 'channel:read:redemptions'
-  const authUrl =
-    `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}` +
-    `&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT)}` +
-    `&response_type=token&scope=${encodeURIComponent(scope)}&force_verify=true`
-
   const url = await openLoginWindow(
-    authUrl,
+    twitchAuthUrl(true),
     (u) => u.startsWith(TWITCH_REDIRECT) && (u.includes('access_token=') || u.includes('error='))
   )
   if (url.includes('error=')) throw new Error('Twitch отказал в доступе')
@@ -106,6 +126,30 @@ export async function twitchLogin(): Promise<void> {
   if (!token) throw new Error('Не удалось получить токен Twitch')
   patchSettings({ twitch: { ...loadSettings().twitch, accessToken: token } })
   bus.info('Вход в Twitch выполнен')
+}
+
+/**
+ * Silent token refresh: re-run the implicit flow in a hidden window. If the
+ * Twitch session cookie is still valid and the app is already authorized,
+ * Twitch redirects straight back with a fresh token — no user interaction.
+ * Throws on timeout (session expired -> caller should ask for a real login).
+ */
+export async function twitchSilentLogin(): Promise<boolean> {
+  if (!twitchClientId()) return false
+  try {
+    const url = await openLoginWindow(
+      twitchAuthUrl(false),
+      (u) => u.startsWith(TWITCH_REDIRECT) && (u.includes('access_token=') || u.includes('error=')),
+      { show: false, timeoutMs: 12000 }
+    )
+    const token = fragmentParam(url, 'access_token')
+    if (!token) return false
+    patchSettings({ twitch: { ...loadSettings().twitch, accessToken: token } })
+    bus.info('Токен Twitch обновлён автоматически')
+    return true
+  } catch {
+    return false
+  }
 }
 
 // ---- Spotify (Authorization Code + PKCE, no secret) -----------------------

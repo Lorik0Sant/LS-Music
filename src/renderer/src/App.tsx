@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import logo from './logo.png'
 import type {
   AppStatus,
   ConnectionState,
@@ -53,6 +54,7 @@ export default function App(): JSX.Element {
   const [yandexMsg, setYandexMsg] = useState('')
   const [spotifyMsg, setSpotifyMsg] = useState('')
   const [manual, setManual] = useState('')
+  const [version, setVersion] = useState('')
   const logRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function App(): JSX.Element {
     window.api.getStatus().then(setStatus)
     window.api.queueList().then(setQueue)
     window.api.getOverlayUrl().then(setOverlayUrl)
+    window.api.getVersion().then(setVersion)
     const offs = [
       window.api.onStatus(setStatus),
       window.api.onQueue(setQueue),
@@ -147,7 +150,8 @@ export default function App(): JSX.Element {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="logo">◉</span> LS Music
+          <img className="logo-img" src={logo} alt="LS" /> LS Music
+          {version && <span className="ver">v{version}</span>}
         </div>
         <div className="pills">
           <Pill label="Twitch" state={status.twitch} />
@@ -440,12 +444,37 @@ export default function App(): JSX.Element {
           )}
 
           <ol className="queue">
-            {queue.map((q) => (
+            {queue.map((q, i) => (
               <li key={q.id}>
-                <span>
+                <span className="q-title">
                   {q.track.artists.join(', ')} — {q.track.title}
+                  <span className="muted small"> · {q.requestedBy}</span>
                 </span>
-                <span className="muted small">{q.requestedBy}</span>
+                <span className="q-actions">
+                  <button
+                    className="icon"
+                    title="Вверх"
+                    disabled={i === 0}
+                    onClick={() => window.api.queueMove(q.id, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="icon"
+                    title="Вниз"
+                    disabled={i === queue.length - 1}
+                    onClick={() => window.api.queueMove(q.id, 1)}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    className="icon danger"
+                    title="Удалить"
+                    onClick={() => window.api.queueRemove(q.id)}
+                  >
+                    ✕
+                  </button>
+                </span>
               </li>
             ))}
             {queue.length === 0 && <li className="muted">Очередь пуста</li>}

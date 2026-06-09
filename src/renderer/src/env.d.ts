@@ -31,7 +31,10 @@ export interface LsApi {
   queueList(): Promise<QueueItem[]>
   queueSkip(): Promise<void>
   queueClear(): Promise<void>
+  queueRemove(id: string): Promise<void>
+  queueMove(id: string, dir: -1 | 1): Promise<void>
   queueRequest(query: string): Promise<void>
+  getVersion(): Promise<string>
 
   onStatus(cb: (s: AppStatus) => void): () => void
   onLog(cb: (e: LogEntry) => void): () => void

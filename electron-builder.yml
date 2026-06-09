@@ -1,5 +1,6 @@
 appId: com.lsmusic.app
 productName: LS Music
+copyright: © LorikoSant
 directories:
   output: release
   buildResources: build
@@ -9,17 +10,27 @@ files:
 extraResources:
   - from: overlay
     to: overlay
+  - from: resources/icon.png
+    to: icon.png
 win:
+  icon: build/icon.ico
   target:
-    - target: portable
+    - target: nsis
       arch:
         - x64
-portable:
-  artifactName: LS Music.${ext}
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
+  createStartMenuShortcut: true
   shortcutName: LS Music
-  artifactName: LS Music-${version}-setup.${ext}
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  artifactName: LS-Music-Setup-${version}.${ext}
+  uninstallDisplayName: LS Music (LorikoSant)
+publish:
+  provider: github
+  owner: Lorik0Sant
+  repo: LS-Music

@@ -103,6 +103,31 @@ class PlaybackQueue {
     }
   }
 
+  /** Remove a queued track (or skip it if it's the one playing). */
+  remove(id: string): void {
+    if (this.current && this.current.id === id) {
+      this.skip()
+      return
+    }
+    const before = this.pending.length
+    this.pending = this.pending.filter((i) => i.id !== id)
+    if (this.pending.length !== before) {
+      this.emitQueue()
+      bus.info('Трек удалён из очереди')
+    }
+  }
+
+  /** Move a queued track up (-1) or down (+1). */
+  move(id: string, dir: -1 | 1): void {
+    const idx = this.pending.findIndex((i) => i.id === id)
+    if (idx === -1) return
+    const target = idx + dir
+    if (target < 0 || target >= this.pending.length) return
+    const [item] = this.pending.splice(idx, 1)
+    this.pending.splice(target, 0, item)
+    this.emitQueue()
+  }
+
   clear(): void {
     this.clearTimer()
     this.pending = []

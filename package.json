@@ -1,8 +1,8 @@
 {
   "name": "ls-music",
-  "version": "0.1.0",
-  "description": "Twitch Channel Points music player with a vinyl-record overlay for OBS (Yandex Music, Spotify-ready)",
-  "author": "LS Music",
+  "version": "0.2.0",
+  "description": "Twitch Channel Points music player with a vinyl-record overlay for OBS (Yandex Music, Spotify)",
+  "author": "LorikoSant",
   "license": "MIT",
   "main": "./out/main/index.js",
   "scripts": {
@@ -12,9 +12,12 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "dist:win": "electron-vite build && electron-builder --win --publish never"
+    "icon": "electron gen-icon.cjs",
+    "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "release:win": "electron-vite build && electron-builder --win --publish always"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "express": "^4.21.2",
     "ws": "^8.18.0"
   },

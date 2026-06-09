@@ -33,7 +33,10 @@ const api = {
   queueList: (): Promise<QueueItem[]> => ipcRenderer.invoke('queue:list'),
   queueSkip: (): Promise<void> => ipcRenderer.invoke('queue:skip'),
   queueClear: (): Promise<void> => ipcRenderer.invoke('queue:clear'),
+  queueRemove: (id: string): Promise<void> => ipcRenderer.invoke('queue:remove', id),
+  queueMove: (id: string, dir: -1 | 1): Promise<void> => ipcRenderer.invoke('queue:move', id, dir),
   queueRequest: (query: string): Promise<void> => ipcRenderer.invoke('queue:request', query),
+  getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
 
   onStatus: (cb: (s: AppStatus) => void) => sub('evt:status', cb),
   onLog: (cb: (e: LogEntry) => void) => sub('evt:log', cb),
