@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LS Music — Overlay</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="stage" class="stage">
+      <div id="card" class="card">
+        <div id="vinyl" class="vinyl">
+          <div class="disc">
+            <div class="grooves"></div>
+            <div class="label">
+              <img id="cover" class="cover" alt="" />
+              <div class="hole"></div>
+            </div>
+            <div class="shine"></div>
+          </div>
+          <div class="tonearm"></div>
+        </div>
+        <div id="info" class="info">
+          <div class="eyebrow">Сейчас играет</div>
+          <div id="title" class="title">—</div>
+          <div id="artist" class="artist">—</div>
+          <div id="requester" class="requester"></div>
+          <div class="progress"><div id="bar" class="bar"></div></div>
+        </div>
+      </div>
+    </div>
+    <audio id="audio" crossorigin="anonymous"></audio>
+    <script src="./overlay.js"></script>
+  </body>
+</html>

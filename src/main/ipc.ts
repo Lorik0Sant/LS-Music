@@ -1,0 +1,94 @@
+import { BrowserWindow, ipcMain } from 'electron'
+import { DeviceAuthInfo, Settings } from '../shared/types'
+import { bus } from './bus'
+import { loadSettings, saveSettings } from './config'
+import { getProvider } from './music'
+import { overlayUrl, pushOverlayConfig } from './overlay-server'
+import { queue } from './queue'
+import { getStatus, setStatus } from './status'
+import { listRewards, logout, pollDeviceToken, startDeviceAuth } from './twitch/auth'
+import { twitchEventSub } from './twitch/eventsub'
+
+function broadcast(channel: string, payload: unknown): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send(channel, payload)
+  }
+}
+
+export function registerIpc(): void {
+  // Forward bus events to the renderer.
+  bus.on('status', (s) => broadcast('evt:status', s))
+  bus.on('log', (e) => broadcast('evt:log', e))
+  bus.on('queue:update', (items) => broadcast('evt:queue', items))
+
+  ipcMain.handle('settings:get', () => loadSettings())
+
+  ipcMain.handle('settings:save', (_e, next: Settings) => {
+    const saved = saveSettings(next)
+    pushOverlayConfig()
+    setStatus({ vinylEnabled: saved.overlay.vinylEnabled })
+    return saved
+  })
+
+  ipcMain.handle('status:get', () => getStatus())
+  ipcMain.handle('overlay:url', () => overlayUrl())
+
+  ipcMain.handle('overlay:toggle-vinyl', (_e, enabled: boolean) => {
+    const s = loadSettings()
+    saveSettings({ ...s, overlay: { ...s.overlay, vinylEnabled: enabled } })
+    pushOverlayConfig()
+    setStatus({ vinylEnabled: enabled })
+    bus.info(`Винил-анимация ${enabled ? 'включена' : 'выключена'}`)
+    return enabled
+  })
+
+  // ---- Twitch -------------------------------------------------------------
+  ipcMain.handle('twitch:auth-start', async (): Promise<DeviceAuthInfo> => {
+    const start = await startDeviceAuth()
+    // Poll + auto-connect in the background; report the result via an event.
+    void pollDeviceToken(start)
+      .then(() => twitchEventSub.connect())
+      .then(() => broadcast('evt:twitch-auth', { ok: true }))
+      .catch((err: Error) => {
+        setStatus({ twitch: 'error' })
+        broadcast('evt:twitch-auth', { ok: false, error: err.message })
+      })
+    return {
+      userCode: start.userCode,
+      verificationUri: start.verificationUri,
+      expiresIn: start.expiresIn
+    }
+  })
+
+  ipcMain.handle('twitch:connect', async () => {
+    await twitchEventSub.connect()
+  })
+  ipcMain.handle('twitch:disconnect', () => twitchEventSub.disconnect())
+  ipcMain.handle('twitch:logout', () => {
+    twitchEventSub.disconnect()
+    logout()
+  })
+  ipcMain.handle('twitch:rewards', () => listRewards())
+
+  // ---- Yandex -------------------------------------------------------------
+  ipcMain.handle('yandex:verify', async () => {
+    setStatus({ yandex: 'connecting' })
+    try {
+      await getProvider('yandex').verify()
+      setStatus({ yandex: 'connected' })
+      bus.info('Яндекс.Музыка: токен валиден')
+      return { ok: true }
+    } catch (err) {
+      setStatus({ yandex: 'error' })
+      return { ok: false, error: (err as Error).message }
+    }
+  })
+
+  // ---- Queue --------------------------------------------------------------
+  ipcMain.handle('queue:list', () => queue.list())
+  ipcMain.handle('queue:skip', () => queue.skip())
+  ipcMain.handle('queue:clear', () => queue.clear())
+  ipcMain.handle('queue:request', (_e, query: string) =>
+    queue.addRequest(query, 'тест')
+  )
+}
