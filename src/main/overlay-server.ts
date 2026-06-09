@@ -49,7 +49,13 @@ export async function startOverlayServer(): Promise<number> {
 
   const port = loadSettings().overlay.port
   const appExpress = express()
-  appExpress.use(express.static(overlayDir()))
+  // Disable caching so OBS Browser Source always fetches the latest overlay
+  // (otherwise it serves a stale cached page after the app is updated).
+  appExpress.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    next()
+  })
+  appExpress.use(express.static(overlayDir(), { etag: false, lastModified: false }))
   appExpress.get('/health', (_req, res) => res.json({ ok: true }))
 
   server = createServer(appExpress)
