@@ -326,24 +326,50 @@ export default function App(): JSX.Element {
           </div>
           <p className="muted small">{spotifyMsg}</p>
           <details className="adv">
-            <summary>Расширенно (Client ID — один раз)</summary>
-            <p className="muted small">
-              Spotify требует свой Client ID. Создайте приложение на
-              developer.spotify.com, добавьте Redirect URI{' '}
-              <code>http://127.0.0.1:8765/callback</code> и вставьте Client ID.
-            </p>
+            <summary>Как включить Spotify (Client ID — один раз)</summary>
+            <ol className="steps">
+              <li>
+                Открой кабинет разработчика Spotify и войди:{' '}
+                <button
+                  className="link"
+                  onClick={() => window.api.openExternal('https://developer.spotify.com/dashboard')}
+                >
+                  developer.spotify.com/dashboard ↗
+                </button>
+              </li>
+              <li>Нажми <b>Create app</b>. Название и описание — любые.</li>
+              <li>
+                В поле <b>Redirect URI</b> вставь и нажми Add:
+                <div className="copyrow">
+                  <code>http://127.0.0.1:8765/callback</code>
+                  <button
+                    className="icon"
+                    title="Копировать"
+                    onClick={() => navigator.clipboard.writeText('http://127.0.0.1:8765/callback')}
+                  >
+                    📋
+                  </button>
+                </div>
+              </li>
+              <li>Отметь <b>Web API</b>, прими условия, нажми <b>Save</b>.</li>
+              <li>Открой приложение → <b>Settings</b> → скопируй <b>Client ID</b> сюда:</li>
+            </ol>
             <label className="field">
               <span>Client ID</span>
               <input
                 type="text"
                 value={settings.spotify.clientId}
-                placeholder="из developer.spotify.com"
+                placeholder="вставь Client ID из кабинета Spotify"
                 onChange={(e) =>
                   setSettings({ ...settings, spotify: { ...settings.spotify, clientId: e.target.value } })
                 }
                 onBlur={() => patch({ spotify: { ...settings.spotify } })}
               />
             </label>
+            <p className="muted small">
+              После этого жми «Войти через Spotify». Без Premium трек играет в
+              приложении Spotify с рекламой; с Premium — без.
+            </p>
           </details>
         </Section>
 

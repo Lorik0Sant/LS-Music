@@ -37,6 +37,7 @@ const api = {
   queueMove: (id: string, dir: -1 | 1): Promise<void> => ipcRenderer.invoke('queue:move', id, dir),
   queueRequest: (query: string): Promise<void> => ipcRenderer.invoke('queue:request', query),
   getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
 
   onStatus: (cb: (s: AppStatus) => void) => sub('evt:status', cb),
   onLog: (cb: (e: LogEntry) => void) => sub('evt:log', cb),
