@@ -3,6 +3,7 @@ import { DeviceAuthInfo, ProviderId, Settings } from '../shared/types'
 import { bus } from './bus'
 import { loadSettings, saveSettings } from './config'
 import { getProvider } from './music'
+import { spotifyLogin, yandexLogin } from './oauth'
 import { overlayUrl, pushOverlayConfig } from './overlay-server'
 import { queue } from './queue'
 import { getStatus, setStatus } from './status'
@@ -71,6 +72,43 @@ export function registerIpc(): void {
   ipcMain.handle('twitch:rewards', () => listRewards())
 
   // ---- Music providers ----------------------------------------------------
+  ipcMain.handle('yandex:login', async () => {
+    setStatus({ yandex: 'connecting' })
+    try {
+      await yandexLogin()
+      await getProvider('yandex').verify()
+      setStatus({ yandex: 'connected' })
+      return { ok: true }
+    } catch (err) {
+      setStatus({ yandex: 'error' })
+      return { ok: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle('spotify:login', async () => {
+    setStatus({ spotify: 'connecting' })
+    try {
+      await spotifyLogin()
+      await getProvider('spotify').verify()
+      setStatus({ spotify: 'connected' })
+      return { ok: true }
+    } catch (err) {
+      setStatus({ spotify: 'error' })
+      return { ok: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle('provider:logout', (_e, id: ProviderId) => {
+    const s = loadSettings()
+    if (id === 'spotify') {
+      saveSettings({ ...s, spotify: { ...s.spotify, accessToken: null, refreshToken: null } })
+      setStatus({ spotify: 'disconnected' })
+    } else {
+      saveSettings({ ...s, yandex: { ...s.yandex, token: '' } })
+      setStatus({ yandex: 'disconnected' })
+    }
+  })
+
   ipcMain.handle('provider:verify', async (_e, id: ProviderId) => {
     setStatus(id === 'spotify' ? { spotify: 'connecting' } : { yandex: 'connecting' })
     try {

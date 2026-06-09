@@ -110,10 +110,29 @@ export default function App(): JSX.Element {
     setYandexMsg(r.ok ? '✓ Токен работает' : '✗ ' + r.error)
   }
 
+  async function loginYandex(): Promise<void> {
+    setYandexMsg('Открываю окно входа…')
+    const r = await window.api.yandexLogin()
+    setYandexMsg(r.ok ? '✓ Вход выполнен' : '✗ ' + r.error)
+    if (r.ok) window.api.getSettings().then(setSettings)
+  }
+
   async function verifySpotify(): Promise<void> {
     setSpotifyMsg('Проверяем…')
     const r = await window.api.verifyProvider('spotify')
-    setSpotifyMsg(r.ok ? '✓ Ключи работают' : '✗ ' + r.error)
+    setSpotifyMsg(r.ok ? '✓ Работает' : '✗ ' + r.error)
+  }
+
+  async function loginSpotify(): Promise<void> {
+    if (!settings!.spotify.clientId.trim()) {
+      setSpotifyMsg('Сначала укажите Client ID (см. «расширенно»)')
+      return
+    }
+    await persist(settings!)
+    setSpotifyMsg('Открываю окно входа…')
+    const r = await window.api.spotifyLogin()
+    setSpotifyMsg(r.ok ? '✓ Вход выполнен' : '✗ ' + r.error)
+    if (r.ok) window.api.getSettings().then(setSettings)
   }
 
   const t = settings.twitch
@@ -230,19 +249,22 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Yandex ----------------------------------------------------------*/}
-        <Section title="Яндекс.Музыка" desc="С Плюсом — полный трек в оверлее; без Плюса — открытие в приложении Яндекс.Музыки.">
-          <label className="field">
-            <span>Токен (нужен для поиска и Плюс-потока)</span>
-            <input
-              type="password"
-              value={settings.yandex.token}
-              placeholder="y0_AgAAAA..."
-              onChange={(e) =>
-                setSettings({ ...settings, yandex: { ...settings.yandex, token: e.target.value } })
-              }
-              onBlur={() => patch({ yandex: { ...settings.yandex } })}
-            />
-          </label>
+        <Section title="Яндекс.Музыка" desc="Просто войдите в свой аккаунт — токен подтянется сам.">
+          {status.yandex === 'connected' || settings.yandex.token ? (
+            <div className="row">
+              <span className="ok">✓ Аккаунт привязан</span>
+              <button className="ghost" onClick={() => window.api.providerLogout('yandex')}>
+                Выйти
+              </button>
+              <button className="ghost" onClick={verifyYandex}>
+                Проверить
+              </button>
+            </div>
+          ) : (
+            <button className="primary big" onClick={loginYandex}>
+              Войти через Яндекс
+            </button>
+          )}
           <div className="field">
             <span>Режим воспроизведения</span>
             <div className="seg">
@@ -260,46 +282,29 @@ export default function App(): JSX.Element {
               </button>
             </div>
           </div>
-          <div className="row">
-            <button className="primary" onClick={verifyYandex}>
-              Проверить токен
-            </button>
-            <span className="muted">{yandexMsg}</span>
-          </div>
+          <p className="muted small">{yandexMsg}</p>
         </Section>
 
         {/* Spotify ---------------------------------------------------------*/}
         <Section
           title="Spotify"
-          desc="Поиск — через Spotify API (без входа). Воспроизведение — в приложении Spotify: бесплатно с рекламой, Premium — без."
+          desc="Войдите в аккаунт. Воспроизведение — в приложении Spotify: бесплатно с рекламой, Premium — без."
         >
-          <label className="field">
-            <span>Client ID</span>
-            <input
-              type="text"
-              value={settings.spotify.clientId}
-              placeholder="из developer.spotify.com"
-              onChange={(e) =>
-                setSettings({ ...settings, spotify: { ...settings.spotify, clientId: e.target.value } })
-              }
-              onBlur={() => patch({ spotify: { ...settings.spotify } })}
-            />
-          </label>
-          <label className="field">
-            <span>Client Secret</span>
-            <input
-              type="password"
-              value={settings.spotify.clientSecret}
-              placeholder="••••••••"
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  spotify: { ...settings.spotify, clientSecret: e.target.value }
-                })
-              }
-              onBlur={() => patch({ spotify: { ...settings.spotify } })}
-            />
-          </label>
+          {status.spotify === 'connected' || settings.spotify.accessToken ? (
+            <div className="row">
+              <span className="ok">✓ Аккаунт привязан</span>
+              <button className="ghost" onClick={() => window.api.providerLogout('spotify')}>
+                Выйти
+              </button>
+              <button className="ghost" onClick={verifySpotify}>
+                Проверить
+              </button>
+            </div>
+          ) : (
+            <button className="primary big" onClick={loginSpotify}>
+              Войти через Spotify
+            </button>
+          )}
           <div className="field">
             <span>Режим воспроизведения</span>
             <div className="seg">
@@ -317,12 +322,27 @@ export default function App(): JSX.Element {
               </button>
             </div>
           </div>
-          <div className="row">
-            <button className="primary" onClick={verifySpotify}>
-              Проверить ключи
-            </button>
-            <span className="muted">{spotifyMsg}</span>
-          </div>
+          <p className="muted small">{spotifyMsg}</p>
+          <details className="adv">
+            <summary>Расширенно (Client ID — один раз)</summary>
+            <p className="muted small">
+              Spotify требует свой Client ID. Создайте приложение на
+              developer.spotify.com, добавьте Redirect URI{' '}
+              <code>http://127.0.0.1:8765/callback</code> и вставьте Client ID.
+            </p>
+            <label className="field">
+              <span>Client ID</span>
+              <input
+                type="text"
+                value={settings.spotify.clientId}
+                placeholder="из developer.spotify.com"
+                onChange={(e) =>
+                  setSettings({ ...settings, spotify: { ...settings.spotify, clientId: e.target.value } })
+                }
+                onBlur={() => patch({ spotify: { ...settings.spotify } })}
+              />
+            </label>
+          </details>
         </Section>
 
         {/* Overlay ---------------------------------------------------------*/}

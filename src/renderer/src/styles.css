@@ -226,6 +226,29 @@ button.ghost {
   background: linear-gradient(180deg, var(--accent-2), var(--accent));
 }
 
+button.big {
+  width: 100%;
+  padding: 13px;
+  font-size: 15px;
+  margin: 4px 0 8px;
+}
+
+.adv {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.adv summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+.adv code {
+  background: #0f0f17;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
 .device {
   margin-top: 12px;
 }

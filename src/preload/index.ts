@@ -25,6 +25,9 @@ const api = {
 
   verifyProvider: (id: ProviderId): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('provider:verify', id),
+  yandexLogin: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('yandex:login'),
+  spotifyLogin: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('spotify:login'),
+  providerLogout: (id: ProviderId): Promise<void> => ipcRenderer.invoke('provider:logout', id),
 
   queueList: (): Promise<QueueItem[]> => ipcRenderer.invoke('queue:list'),
   queueSkip: (): Promise<void> => ipcRenderer.invoke('queue:skip'),

@@ -61,7 +61,10 @@ export interface Settings {
   }
   spotify: {
     clientId: string
+    /** Optional: only needed for the Client-Credentials fallback (no login). */
     clientSecret: string
+    accessToken: string | null
+    refreshToken: string | null
     /** `app` = full track via Spotify app (free=ads); `preview` = 30s in overlay. */
     mode: SpotifyMode
   }
@@ -137,6 +140,6 @@ export const DEFAULT_SETTINGS: Settings = {
     rewardTitle: 'Заказать трек'
   },
   yandex: { token: '', mode: 'stream' },
-  spotify: { clientId: '', clientSecret: '', mode: 'app' },
+  spotify: { clientId: '', clientSecret: '', accessToken: null, refreshToken: null, mode: 'app' },
   overlay: { vinylEnabled: true, port: 7895, showNowPlaying: true, volume: 0.8 }
 }

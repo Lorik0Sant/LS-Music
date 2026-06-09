@@ -32,6 +32,17 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // Surface renderer console + crashes in the app log for diagnostics.
+  mainWindow.webContents.on('console-message', (_e, level, message) => {
+    if (level >= 2) bus.error(`[renderer] ${message}`)
+  })
+  mainWindow.webContents.on('render-process-gone', (_e, d) =>
+    bus.error(`[renderer] процесс упал: ${d.reason}`)
+  )
+  mainWindow.webContents.on('preload-error', (_e, path, err) =>
+    bus.error(`[preload] ${path}: ${err.message}`)
+  )
+
   if (process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {

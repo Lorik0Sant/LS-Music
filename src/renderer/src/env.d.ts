@@ -23,6 +23,9 @@ export interface LsApi {
   twitchRewards(): Promise<TwitchReward[]>
 
   verifyProvider(id: ProviderId): Promise<{ ok: boolean; error?: string }>
+  yandexLogin(): Promise<{ ok: boolean; error?: string }>
+  spotifyLogin(): Promise<{ ok: boolean; error?: string }>
+  providerLogout(id: ProviderId): Promise<void>
 
   queueList(): Promise<QueueItem[]>
   queueSkip(): Promise<void>
