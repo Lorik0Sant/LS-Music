@@ -18,6 +18,7 @@ const api = {
     ipcRenderer.invoke('overlay:toggle-vinyl', enabled),
 
   twitchAuthStart: (): Promise<DeviceAuthInfo> => ipcRenderer.invoke('twitch:auth-start'),
+  twitchLogin: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('twitch:login'),
   twitchConnect: (): Promise<void> => ipcRenderer.invoke('twitch:connect'),
   twitchDisconnect: (): Promise<void> => ipcRenderer.invoke('twitch:disconnect'),
   twitchLogout: (): Promise<void> => ipcRenderer.invoke('twitch:logout'),

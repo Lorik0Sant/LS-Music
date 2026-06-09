@@ -17,6 +17,7 @@ export interface LsApi {
   toggleVinyl(enabled: boolean): Promise<boolean>
 
   twitchAuthStart(): Promise<DeviceAuthInfo>
+  twitchLogin(): Promise<{ ok: boolean; error?: string }>
   twitchConnect(): Promise<void>
   twitchDisconnect(): Promise<void>
   twitchLogout(): Promise<void>

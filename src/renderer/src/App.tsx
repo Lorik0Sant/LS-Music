@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type {
   AppStatus,
   ConnectionState,
-  DeviceAuthInfo,
   LogEntry,
   QueueItem,
   Settings,
@@ -49,8 +48,8 @@ export default function App(): JSX.Element {
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [overlayUrl, setOverlayUrl] = useState('')
-  const [device, setDevice] = useState<DeviceAuthInfo | null>(null)
   const [rewards, setRewards] = useState<TwitchReward[]>([])
+  const [twitchMsg, setTwitchMsg] = useState('')
   const [yandexMsg, setYandexMsg] = useState('')
   const [spotifyMsg, setSpotifyMsg] = useState('')
   const [manual, setManual] = useState('')
@@ -64,12 +63,7 @@ export default function App(): JSX.Element {
     const offs = [
       window.api.onStatus(setStatus),
       window.api.onQueue(setQueue),
-      window.api.onLog((e) => setLogs((l) => [...l.slice(-200), e])),
-      window.api.onTwitchAuth((r) => {
-        setDevice(null)
-        setYandexMsg('')
-        if (!r.ok && r.error) alert('Twitch: ' + r.error)
-      })
+      window.api.onLog((e) => setLogs((l) => [...l.slice(-200), e]))
     ]
     return () => offs.forEach((off) => off())
   }, [])
@@ -86,14 +80,20 @@ export default function App(): JSX.Element {
   }
   const patch = (p: Partial<Settings>): Promise<void> => persist({ ...settings!, ...p })
 
-  async function startAuth(): Promise<void> {
+  async function loginTwitch(): Promise<void> {
     if (!settings!.twitch.clientId.trim()) {
-      alert('Сначала укажите Twitch Client-ID')
+      alert(
+        'Для входа в Twitch нужен Client ID (один раз).\n\n' +
+          '1. Откройте dev.twitch.tv/console/apps → Register Your Application\n' +
+          '2. OAuth Redirect URL: http://localhost\n' +
+          '3. Скопируйте Client ID в раздел «Расширенно» ниже.'
+      )
       return
     }
-    await persist(settings!) // make sure clientId is saved before auth
-    const info = await window.api.twitchAuthStart()
-    setDevice(info)
+    await persist(settings!)
+    setTwitchMsg('Открываю окно входа…')
+    const r = await window.api.twitchLogin()
+    setTwitchMsg(r.ok ? '✓ Вход выполнен' : '✗ ' + r.error)
   }
 
   async function loadRewards(): Promise<void> {
@@ -125,7 +125,12 @@ export default function App(): JSX.Element {
 
   async function loginSpotify(): Promise<void> {
     if (!settings!.spotify.clientId.trim()) {
-      setSpotifyMsg('Сначала укажите Client ID (см. «расширенно»)')
+      alert(
+        'Для входа в Spotify нужен Client ID (один раз).\n\n' +
+          '1. Откройте developer.spotify.com/dashboard → Create app\n' +
+          '2. Redirect URI: http://127.0.0.1:8765/callback\n' +
+          '3. Скопируйте Client ID в раздел «Расширенно» ниже.'
+      )
       return
     }
     await persist(settings!)
@@ -179,24 +184,10 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Twitch ----------------------------------------------------------*/}
-        <Section
-          title="Twitch"
-          desc="Слушаем активацию награды за баллы канала. Нужен Client-ID приложения с dev.twitch.tv."
-        >
-          <label className="field">
-            <span>Client-ID</span>
-            <input
-              type="text"
-              value={t.clientId}
-              placeholder="abcd1234..."
-              onChange={(e) => setSettings({ ...settings, twitch: { ...t, clientId: e.target.value } })}
-              onBlur={() => patch({ twitch: { ...settings.twitch } })}
-            />
-          </label>
-
+        <Section title="Twitch" desc="Войдите — и слушаем активацию награды за баллы канала.">
           {status.twitch === 'connected' ? (
             <div className="row">
-              <span className="ok">Авторизован: {status.twitchUser}</span>
+              <span className="ok">✓ {status.twitchUser}</span>
               <button className="ghost" onClick={() => window.api.twitchDisconnect()}>
                 Отключить
               </button>
@@ -204,23 +195,30 @@ export default function App(): JSX.Element {
                 Выйти
               </button>
             </div>
-          ) : device ? (
-            <div className="device">
-              <p>
-                Откройте{' '}
-                <a href={device.verificationUri} target="_blank" rel="noreferrer">
-                  {device.verificationUri}
-                </a>{' '}
-                и введите код:
-              </p>
-              <div className="code">{device.userCode}</div>
-              <p className="muted">Ожидаем подтверждение…</p>
-            </div>
           ) : (
-            <button className="primary" onClick={startAuth}>
-              Авторизоваться в Twitch
+            <button className="primary big" onClick={loginTwitch}>
+              Войти через Twitch
             </button>
           )}
+          <p className="muted small">{twitchMsg}</p>
+
+          <details className="adv">
+            <summary>Расширенно (Client ID — один раз)</summary>
+            <p className="muted small">
+              Twitch требует свой Client ID. Создайте приложение на dev.twitch.tv,
+              добавьте Redirect URI <code>http://localhost</code>, вставьте Client ID.
+            </p>
+            <label className="field">
+              <span>Client ID</span>
+              <input
+                type="text"
+                value={t.clientId}
+                placeholder="abcd1234..."
+                onChange={(e) => setSettings({ ...settings, twitch: { ...t, clientId: e.target.value } })}
+                onBlur={() => patch({ twitch: { ...settings.twitch } })}
+              />
+            </label>
+          </details>
 
           <div className="reward">
             <div className="row">

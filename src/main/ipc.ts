@@ -3,7 +3,7 @@ import { DeviceAuthInfo, ProviderId, Settings } from '../shared/types'
 import { bus } from './bus'
 import { loadSettings, saveSettings } from './config'
 import { getProvider } from './music'
-import { spotifyLogin, yandexLogin } from './oauth'
+import { spotifyLogin, twitchLogin, yandexLogin } from './oauth'
 import { overlayUrl, pushOverlayConfig } from './overlay-server'
 import { queue } from './queue'
 import { getStatus, setStatus } from './status'
@@ -58,6 +58,18 @@ export function registerIpc(): void {
       userCode: start.userCode,
       verificationUri: start.verificationUri,
       expiresIn: start.expiresIn
+    }
+  })
+
+  ipcMain.handle('twitch:login', async () => {
+    setStatus({ twitch: 'connecting' })
+    try {
+      await twitchLogin()
+      await twitchEventSub.connect() // validates token, fetches self, subscribes
+      return { ok: true }
+    } catch (err) {
+      setStatus({ twitch: 'error' })
+      return { ok: false, error: (err as Error).message }
     }
   })
 

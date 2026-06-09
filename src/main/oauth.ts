@@ -13,6 +13,11 @@ export const YANDEX_CLIENT_ID = '23cabbbdc6cd418abb4b39c32c41195d'
 export const DEFAULT_SPOTIFY_CLIENT_ID = ''
 export const SPOTIFY_REDIRECT = 'http://127.0.0.1:8765/callback'
 
+// Twitch needs your own app's Client ID (free, from dev.twitch.tv). Bake a
+// default here for zero-setup, or leave empty and paste it in the UI.
+export const DEFAULT_TWITCH_CLIENT_ID = ''
+export const TWITCH_REDIRECT = 'http://localhost'
+
 /**
  * Open a login window, let the user sign in, and resolve with the redirect URL
  * once it matches `isDone`. Works for both implicit (token in #fragment) and
@@ -72,6 +77,35 @@ export async function yandexLogin(): Promise<void> {
   if (!token) throw new Error('Не удалось получить токен Яндекса')
   patchSettings({ yandex: { ...loadSettings().yandex, token } })
   bus.info('Вход в Яндекс выполнен')
+}
+
+// ---- Twitch (implicit, popup login) ---------------------------------------
+
+export function twitchClientId(): string {
+  return (loadSettings().twitch.clientId || DEFAULT_TWITCH_CLIENT_ID).trim()
+}
+
+export async function twitchLogin(): Promise<void> {
+  const clientId = twitchClientId()
+  if (!clientId) throw new Error('Укажите Twitch Client ID (dev.twitch.tv)')
+  // Persist clientId so the rest of the app (EventSub) uses the same one.
+  patchSettings({ twitch: { ...loadSettings().twitch, clientId } })
+
+  const scope = 'channel:read:redemptions'
+  const authUrl =
+    `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT)}` +
+    `&response_type=token&scope=${encodeURIComponent(scope)}&force_verify=true`
+
+  const url = await openLoginWindow(
+    authUrl,
+    (u) => u.startsWith(TWITCH_REDIRECT) && (u.includes('access_token=') || u.includes('error='))
+  )
+  if (url.includes('error=')) throw new Error('Twitch отказал в доступе')
+  const token = fragmentParam(url, 'access_token')
+  if (!token) throw new Error('Не удалось получить токен Twitch')
+  patchSettings({ twitch: { ...loadSettings().twitch, accessToken: token } })
+  bus.info('Вход в Twitch выполнен')
 }
 
 // ---- Spotify (Authorization Code + PKCE, no secret) -----------------------
