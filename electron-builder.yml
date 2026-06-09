@@ -34,3 +34,4 @@ publish:
   provider: github
   owner: Lorik0Sant
   repo: LS-Music
+  releaseType: release
