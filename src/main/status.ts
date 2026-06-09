@@ -6,6 +6,8 @@ const state: AppStatus = {
   twitch: 'disconnected',
   twitchUser: null,
   yandex: 'disconnected',
+  spotify: 'disconnected',
+  activeProvider: loadSettings().activeProvider,
   overlayClients: 0,
   nowPlaying: null,
   vinylEnabled: loadSettings().overlay.vinylEnabled

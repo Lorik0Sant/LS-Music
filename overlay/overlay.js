@@ -35,11 +35,19 @@
     }
     applyConfig(cfg)
 
-    audio.src = t.streamUrl || ''
     bar.style.width = '0%'
-    const playPromise = audio.play()
-    if (playPromise && playPromise.catch) {
-      playPromise.catch((err) => send({ type: 'error', message: 'autoplay: ' + err.message }))
+    const pb = item.playback || {}
+    if (pb.kind === 'audio' && pb.url) {
+      // We play the audio ourselves (Yandex Plus stream or Spotify preview).
+      audio.src = pb.url
+      const playPromise = audio.play()
+      if (playPromise && playPromise.catch) {
+        playPromise.catch((err) => send({ type: 'error', message: 'autoplay: ' + err.message }))
+      }
+    } else {
+      // External app plays the sound (e.g. Spotify desktop). Vinyl only.
+      audio.removeAttribute('src')
+      audio.load()
     }
     card.classList.add('visible')
     disc.classList.add('spinning')

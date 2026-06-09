@@ -3,6 +3,7 @@ import type {
   AppStatus,
   DeviceAuthInfo,
   LogEntry,
+  ProviderId,
   QueueItem,
   Settings,
   TwitchReward
@@ -21,7 +22,7 @@ export interface LsApi {
   twitchLogout(): Promise<void>
   twitchRewards(): Promise<TwitchReward[]>
 
-  yandexVerify(): Promise<{ ok: boolean; error?: string }>
+  verifyProvider(id: ProviderId): Promise<{ ok: boolean; error?: string }>
 
   queueList(): Promise<QueueItem[]>
   queueSkip(): Promise<void>

@@ -208,6 +208,24 @@ button.ghost {
   accent-color: var(--accent);
 }
 
+.seg {
+  display: inline-flex;
+  gap: 0;
+  background: #0f0f17;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+}
+.seg button {
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+.seg button.seg-on {
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+}
+
 .device {
   margin-top: 12px;
 }

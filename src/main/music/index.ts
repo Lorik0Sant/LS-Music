@@ -1,4 +1,5 @@
 import { ProviderId } from '../../shared/types'
+import { loadSettings } from '../config'
 import { MusicProvider } from './provider'
 import { SpotifyProvider } from './spotify'
 import { YandexProvider } from './yandex'
@@ -18,8 +19,7 @@ export function listProviders(): MusicProvider[] {
 
 /** The provider currently used to fulfil track requests. */
 export function activeProvider(): MusicProvider {
-  // Yandex only for now; Spotify selection comes later.
-  return providers.yandex
+  return providers[loadSettings().activeProvider] ?? providers.yandex
 }
 
 export type { MusicProvider }

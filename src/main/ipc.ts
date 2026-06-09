@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import { DeviceAuthInfo, Settings } from '../shared/types'
+import { DeviceAuthInfo, ProviderId, Settings } from '../shared/types'
 import { bus } from './bus'
 import { loadSettings, saveSettings } from './config'
 import { getProvider } from './music'
@@ -26,7 +26,7 @@ export function registerIpc(): void {
   ipcMain.handle('settings:save', (_e, next: Settings) => {
     const saved = saveSettings(next)
     pushOverlayConfig()
-    setStatus({ vinylEnabled: saved.overlay.vinylEnabled })
+    setStatus({ vinylEnabled: saved.overlay.vinylEnabled, activeProvider: saved.activeProvider })
     return saved
   })
 
@@ -70,16 +70,16 @@ export function registerIpc(): void {
   })
   ipcMain.handle('twitch:rewards', () => listRewards())
 
-  // ---- Yandex -------------------------------------------------------------
-  ipcMain.handle('yandex:verify', async () => {
-    setStatus({ yandex: 'connecting' })
+  // ---- Music providers ----------------------------------------------------
+  ipcMain.handle('provider:verify', async (_e, id: ProviderId) => {
+    setStatus(id === 'spotify' ? { spotify: 'connecting' } : { yandex: 'connecting' })
     try {
-      await getProvider('yandex').verify()
-      setStatus({ yandex: 'connected' })
-      bus.info('Яндекс.Музыка: токен валиден')
+      await getProvider(id).verify()
+      setStatus(id === 'spotify' ? { spotify: 'connected' } : { yandex: 'connected' })
+      bus.info(`${id}: учётные данные валидны`)
       return { ok: true }
     } catch (err) {
-      setStatus({ yandex: 'error' })
+      setStatus(id === 'spotify' ? { spotify: 'error' } : { yandex: 'error' })
       return { ok: false, error: (err as Error).message }
     }
   })

@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
-import { Track } from '../../shared/types'
+import { Playback, Track } from '../../shared/types'
 import { loadSettings } from '../config'
+import { bus } from '../bus'
 import { MusicProvider } from './provider'
 
 const API = 'https://api.music.yandex.net'
@@ -59,11 +60,26 @@ export class YandexProvider implements MusicProvider {
       title: best.title,
       artists: (best.artists ?? []).map((a: any) => a.name),
       coverUrl: pickCover(best.coverUri ?? albums[0]?.coverUri),
-      durationMs: best.durationMs ?? 0
+      durationMs: best.durationMs ?? 0,
+      externalUri: `https://music.yandex.ru/track/${best.id}`
     }
   }
 
-  async resolveStreamUrl(track: Track): Promise<string> {
+  async resolvePlayback(track: Track): Promise<Playback> {
+    const webUrl = track.externalUri ?? `https://music.yandex.ru/track/${track.id}`
+    if (loadSettings().yandex.mode === 'app') {
+      return { kind: 'external', uri: webUrl }
+    }
+    try {
+      return { kind: 'audio', url: await this.streamUrl(track) }
+    } catch (err) {
+      // Most likely no Plus subscription — fall back to opening the app/web.
+      bus.warn(`Яндекс: нет потока (${(err as Error).message}), открою в приложении`)
+      return { kind: 'external', uri: webUrl }
+    }
+  }
+
+  private async streamUrl(track: Track): Promise<string> {
     const token = this.token()
     if (!token) throw new Error('Не указан токен Яндекс.Музыки')
 

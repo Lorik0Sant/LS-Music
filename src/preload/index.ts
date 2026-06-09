@@ -3,6 +3,7 @@ import {
   AppStatus,
   DeviceAuthInfo,
   LogEntry,
+  ProviderId,
   QueueItem,
   Settings,
   TwitchReward
@@ -22,8 +23,8 @@ const api = {
   twitchLogout: (): Promise<void> => ipcRenderer.invoke('twitch:logout'),
   twitchRewards: (): Promise<TwitchReward[]> => ipcRenderer.invoke('twitch:rewards'),
 
-  yandexVerify: (): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('yandex:verify'),
+  verifyProvider: (id: ProviderId): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('provider:verify', id),
 
   queueList: (): Promise<QueueItem[]> => ipcRenderer.invoke('queue:list'),
   queueSkip: (): Promise<void> => ipcRenderer.invoke('queue:skip'),

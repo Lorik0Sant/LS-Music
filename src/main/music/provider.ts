@@ -1,8 +1,8 @@
-import { ProviderId, Track } from '../../shared/types'
+import { Playback, ProviderId, Track } from '../../shared/types'
 
 /**
- * A music source. Add Spotify later by implementing this same interface and
- * registering it — nothing else in the app needs to change.
+ * A music source. Add a new service by implementing this interface and
+ * registering it in ./index.ts — nothing else in the app needs to change.
  */
 export interface MusicProvider {
   readonly id: ProviderId
@@ -12,6 +12,6 @@ export interface MusicProvider {
   verify(): Promise<void>
   /** Find the best matching track for a free-text query. */
   search(query: string): Promise<Track | null>
-  /** Resolve a directly-playable audio URL for a track. */
-  resolveStreamUrl(track: Track): Promise<string>
+  /** Decide how to play a track (direct audio vs hand-off to the native app). */
+  resolvePlayback(track: Track): Promise<Playback>
 }

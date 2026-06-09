@@ -11,13 +11,15 @@ extraResources:
     to: overlay
 win:
   target:
-    - target: nsis
+    - target: portable
       arch:
         - x64
-  artifactName: ${productName}-${version}-setup.${ext}
+portable:
+  artifactName: LS Music.${ext}
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   shortcutName: LS Music
+  artifactName: LS Music-${version}-setup.${ext}
