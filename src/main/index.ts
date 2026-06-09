@@ -1,9 +1,12 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { bus } from './bus'
+import { loadSettings } from './config'
 import { registerIpc } from './ipc'
 import { startOverlayServer } from './overlay-server'
 import { queue } from './queue'
+import { setStatus } from './status'
+import { twitchEventSub } from './twitch/eventsub'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -59,11 +62,25 @@ app.whenReady().then(async () => {
     bus.error(`Не удалось запустить overlay-сервер: ${(err as Error).message}`)
   }
   createWindow()
+  restoreSessions()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+/** Reconnect/reflect saved logins on startup so redemptions work right away. */
+function restoreSessions(): void {
+  const s = loadSettings()
+  if (s.yandex.token) setStatus({ yandex: 'connected' })
+  if (s.spotify.accessToken) setStatus({ spotify: 'connected' })
+  if (s.twitch.accessToken) {
+    bus.info('Восстанавливаю подключение Twitch…')
+    twitchEventSub.connect().catch((err) => {
+      bus.warn(`Twitch авто-подключение не удалось: ${(err as Error).message}. Войдите заново.`)
+    })
+  }
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

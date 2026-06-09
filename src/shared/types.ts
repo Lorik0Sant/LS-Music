@@ -74,6 +74,8 @@ export interface Settings {
     showNowPlaying: boolean
     /** 0..1 */
     volume: number
+    /** Auto-hide the card this many seconds after a track starts. 0 = whole track. */
+    displaySeconds: number
   }
 }
 
@@ -110,16 +112,17 @@ export interface LogEntry {
 
 // ---- Overlay WebSocket protocol -------------------------------------------
 
+export interface OverlayConfig {
+  volume: number
+  vinylEnabled: boolean
+  showNowPlaying: boolean
+  displaySeconds: number
+}
+
 export type ServerToOverlay =
-  | {
-      type: 'play'
-      item: QueueItem
-      volume: number
-      vinylEnabled: boolean
-      showNowPlaying: boolean
-    }
+  | ({ type: 'play'; item: QueueItem } & OverlayConfig)
   | { type: 'stop' }
-  | { type: 'config'; volume: number; vinylEnabled: boolean; showNowPlaying: boolean }
+  | ({ type: 'config' } & OverlayConfig)
 
 export type OverlayToServer =
   | { type: 'ready' }
@@ -141,5 +144,5 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   yandex: { token: '', mode: 'stream' },
   spotify: { clientId: '', clientSecret: '', accessToken: null, refreshToken: null, mode: 'app' },
-  overlay: { vinylEnabled: true, port: 7895, showNowPlaying: true, volume: 0.8 }
+  overlay: { vinylEnabled: true, port: 7895, showNowPlaying: true, volume: 0.8, displaySeconds: 0 }
 }

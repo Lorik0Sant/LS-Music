@@ -356,9 +356,12 @@ export default function App(): JSX.Element {
             <input
               type="checkbox"
               checked={settings.overlay.vinylEnabled}
-              onChange={(e) => window.api.toggleVinyl(e.target.checked).then(() =>
-                setSettings({ ...settings, overlay: { ...settings.overlay, vinylEnabled: e.target.checked } })
-              )}
+              onChange={(e) => {
+                const v = e.target.checked
+                // Update the UI instantly, then sync to the overlay.
+                setSettings({ ...settings, overlay: { ...settings.overlay, vinylEnabled: v } })
+                window.api.toggleVinyl(v)
+              }}
             />
             <span>Анимация винила {settings.overlay.vinylEnabled ? 'вкл' : 'выкл'}</span>
           </label>
@@ -386,6 +389,28 @@ export default function App(): JSX.Element {
                 patch({ overlay: { ...settings.overlay, volume: Number(e.target.value) } })
               }
             />
+          </label>
+
+          <label className="field">
+            <span>
+              Скрывать винил через:{' '}
+              {settings.overlay.displaySeconds === 0
+                ? 'весь трек'
+                : `${settings.overlay.displaySeconds} сек`}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={60}
+              step={1}
+              value={settings.overlay.displaySeconds}
+              onChange={(e) =>
+                patch({ overlay: { ...settings.overlay, displaySeconds: Number(e.target.value) } })
+              }
+            />
+            <span className="muted small">
+              0 = показывать весь трек. Звук продолжает играть после скрытия.
+            </span>
           </label>
 
           <label className="field">

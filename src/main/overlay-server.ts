@@ -24,9 +24,19 @@ function overlayDir(): string {
   return candidates.find((p) => existsSync(p)) ?? candidates[candidates.length - 1]
 }
 
-function overlayConfig(): { volume: number; vinylEnabled: boolean; showNowPlaying: boolean } {
+function overlayConfig(): {
+  volume: number
+  vinylEnabled: boolean
+  showNowPlaying: boolean
+  displaySeconds: number
+} {
   const s = loadSettings().overlay
-  return { volume: s.volume, vinylEnabled: s.vinylEnabled, showNowPlaying: s.showNowPlaying }
+  return {
+    volume: s.volume,
+    vinylEnabled: s.vinylEnabled,
+    showNowPlaying: s.showNowPlaying,
+    displaySeconds: s.displaySeconds
+  }
 }
 
 function broadcast(msg: ServerToOverlay): void {

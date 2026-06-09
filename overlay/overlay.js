@@ -14,9 +14,12 @@
   let current = null // current QueueItem
   let ws = null
   let reconnectTimer = null
+  let hideTimer = null
+  let displaySeconds = 0
 
   function applyConfig(cfg) {
     if (typeof cfg.volume === 'number') audio.volume = cfg.volume
+    if (typeof cfg.displaySeconds === 'number') displaySeconds = cfg.displaySeconds
     vinyl.classList.toggle('hidden', cfg.vinylEnabled === false)
     card.classList.toggle('text-hidden', cfg.showNowPlaying === false)
   }
@@ -52,10 +55,17 @@
     card.classList.add('visible')
     disc.classList.add('spinning')
     vinyl.classList.add('playing')
+
+    // Auto-hide the card after N seconds (audio keeps playing). 0 = whole track.
+    clearTimeout(hideTimer)
+    if (displaySeconds > 0) {
+      hideTimer = setTimeout(() => card.classList.remove('visible'), displaySeconds * 1000)
+    }
   }
 
   function stop() {
     current = null
+    clearTimeout(hideTimer)
     audio.pause()
     audio.removeAttribute('src')
     audio.load()
