@@ -1,6 +1,6 @@
 // Shared types used across main, preload, renderer and overlay.
 
-export type ProviderId = 'yandex' | 'spotify'
+export type ProviderId = 'yandex' | 'spotify' | 'youtube'
 
 export interface Track {
   provider: ProviderId
@@ -26,6 +26,7 @@ export interface Track {
 export type Playback =
   | { kind: 'audio'; url: string }
   | { kind: 'external'; uri: string }
+  | { kind: 'youtube'; videoId: string }
 
 export interface QueueItem {
   /** Unique id for this queue entry (not the track id). */
@@ -98,6 +99,7 @@ export interface AppStatus {
   twitchUser: string | null
   yandex: ConnectionState
   spotify: ConnectionState
+  youtube: ConnectionState
   activeProvider: ProviderId
   overlayClients: number
   nowPlaying: QueueItem | null

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import logo from './logo.png'
+import { AUTHOR, LINKS, USDT_TRC20 } from '../../shared/links'
 import type {
   AppStatus,
   ConnectionState,
@@ -55,6 +56,7 @@ export default function App(): JSX.Element {
   const [spotifyMsg, setSpotifyMsg] = useState('')
   const [manual, setManual] = useState('')
   const [version, setVersion] = useState('')
+  const [modal, setModal] = useState<null | 'about' | 'donate'>(null)
   const logRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -139,8 +141,19 @@ export default function App(): JSX.Element {
     await persist(settings!)
     setSpotifyMsg('Открываю окно входа…')
     const r = await window.api.spotifyLogin()
-    setSpotifyMsg(r.ok ? '✓ Вход выполнен' : '✗ ' + r.error)
-    if (r.ok) window.api.getSettings().then(setSettings)
+    if (r.ok) {
+      setSpotifyMsg('✓ Вход выполнен')
+      window.api.getSettings().then(setSettings)
+    } else {
+      setSpotifyMsg('✗ ' + r.error)
+      alert(
+        'Не удалось войти в Spotify: ' +
+          (r.error || '') +
+          '\n\nЧаще всего причина — Redirect URI. В кабинете Spotify (Settings) ' +
+          'в поле Redirect URIs должно быть ТОЧНО:\n\n  http://127.0.0.1:8765/callback\n\n' +
+          'Без лишнего слэша в конце, именно 127.0.0.1 (не localhost), и нажми Save.'
+      )
+    }
   }
 
   const t = settings.twitch
@@ -157,17 +170,85 @@ export default function App(): JSX.Element {
           <Pill label="Twitch" state={status.twitch} />
           <Pill label="Яндекс" state={status.yandex} />
           <Pill label="Spotify" state={status.spotify} />
+          <Pill label="YouTube" state={status.youtube} />
           <span className="pill pill--info">OBS: {status.overlayClients}</span>
         </div>
       </header>
 
+      <nav className="topnav">
+        <button onClick={() => setModal('about')}>О сервисе</button>
+        <button onClick={() => window.api.openExternal(LINKS.github)}>GitHub</button>
+        <button onClick={() => window.api.openExternal(LINKS.vpnBot)}>Купить VPN</button>
+        <button onClick={() => setModal('donate')}>Поддержать проект</button>
+        <button onClick={() => window.api.checkUpdates()}>Обновить</button>
+        <button className="nav-exit" onClick={() => window.api.quit()}>
+          Выход
+        </button>
+      </nav>
+
+      {modal === 'about' && (
+        <div className="modal-bg" onClick={() => setModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <img className="modal-logo" src={logo} alt="" />
+            <h2>LS Music {version && <span className="ver">v{version}</span>}</h2>
+            <p className="muted">
+              Музыка по баллам канала Twitch с анимацией винила для OBS. Яндекс.Музыка,
+              Spotify и YouTube.
+            </p>
+            <p>
+              Автор: <b>{AUTHOR}</b>
+            </p>
+            <div className="row">
+              <button className="primary" onClick={() => window.api.openExternal(LINKS.twitch)}>
+                Twitch автора
+              </button>
+              <button className="ghost" onClick={() => window.api.openExternal(LINKS.github)}>
+                GitHub
+              </button>
+              <button className="ghost" onClick={() => setModal(null)}>
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal === 'donate' && (
+        <div className="modal-bg" onClick={() => setModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Поддержать проект 💜</h2>
+            <p className="muted">Спасибо, что помогаешь развивать LS Music!</p>
+            <button className="primary big" onClick={() => window.api.openExternal(LINKS.donate)}>
+              DonationAlerts
+            </button>
+            <label className="field">
+              <span>USDT (TRC20)</span>
+              <div className="copyrow">
+                <code className="url">{USDT_TRC20}</code>
+                <button className="icon" onClick={() => navigator.clipboard.writeText(USDT_TRC20)}>
+                  📋
+                </button>
+              </div>
+            </label>
+            <div className="row">
+              <button className="ghost" onClick={() => setModal(null)}>
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="grid">
         {/* Active provider -------------------------------------------------*/}
-        <Section
-          title="Источник музыки"
-          desc="Какой сервис проигрывает заказы зрителей."
-        >
+        <Section title="Источник музыки" desc="Какой сервис проигрывает заказы зрителей.">
           <div className="seg">
+            <button
+              className={settings.activeProvider === 'youtube' ? 'seg-on' : ''}
+              onClick={() => patch({ activeProvider: 'youtube' })}
+            >
+              YouTube
+            </button>
             <button
               className={settings.activeProvider === 'yandex' ? 'seg-on' : ''}
               onClick={() => patch({ activeProvider: 'yandex' })}
@@ -182,8 +263,23 @@ export default function App(): JSX.Element {
             </button>
           </div>
           <p className="muted small">
-            Активен: <b>{settings.activeProvider === 'spotify' ? 'Spotify' : 'Яндекс.Музыка'}</b>.
-            Работает и без подписки — см. режимы ниже.
+            {settings.activeProvider === 'youtube' && (
+              <>
+                <b>YouTube</b> — бесплатно для всех, ничего настраивать не нужно. Трек
+                играет прямо в оверлее.
+              </>
+            )}
+            {settings.activeProvider === 'yandex' && (
+              <>
+                <b>Яндекс.Музыка</b> — полноценный трек в оверлее только с подпиской
+                Плюс. Без Плюса будет реклама — для бесплатного выбери YouTube.
+              </>
+            )}
+            {settings.activeProvider === 'spotify' && (
+              <>
+                <b>Spotify</b> — играет в приложении Spotify (без Premium с рекламой).
+              </>
+            )}
           </p>
         </Section>
 

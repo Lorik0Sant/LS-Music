@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { DeviceAuthInfo, ProviderId, Settings } from '../shared/types'
+import { appState } from './app-state'
 import { bus } from './bus'
+import { checkForUpdates } from './updater'
 import { loadSettings, saveSettings } from './config'
 import { getProvider } from './music'
 import { spotifyLogin, twitchLogin, yandexLogin } from './oauth'
@@ -122,14 +124,14 @@ export function registerIpc(): void {
   })
 
   ipcMain.handle('provider:verify', async (_e, id: ProviderId) => {
-    setStatus(id === 'spotify' ? { spotify: 'connecting' } : { yandex: 'connecting' })
+    setStatus({ [id]: 'connecting' } as never)
     try {
       await getProvider(id).verify()
-      setStatus(id === 'spotify' ? { spotify: 'connected' } : { yandex: 'connected' })
+      setStatus({ [id]: 'connected' } as never)
       bus.info(`${id}: учётные данные валидны`)
       return { ok: true }
     } catch (err) {
-      setStatus(id === 'spotify' ? { spotify: 'error' } : { yandex: 'error' })
+      setStatus({ [id]: 'error' } as never)
       return { ok: false, error: (err as Error).message }
     }
   })
@@ -142,6 +144,11 @@ export function registerIpc(): void {
   ipcMain.handle('queue:move', (_e, id: string, dir: -1 | 1) => queue.move(id, dir))
   ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('app:openExternal', (_e, url: string) => shell.openExternal(url))
+  ipcMain.handle('app:quit', () => {
+    appState.quitting = true
+    app.quit()
+  })
+  ipcMain.handle('app:check-updates', () => checkForUpdates(true))
   ipcMain.handle('queue:request', (_e, query: string) =>
     queue.addRequest(query, 'тест')
   )

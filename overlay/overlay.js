@@ -16,9 +16,65 @@
   let reconnectTimer = null
   let hideTimer = null
   let displaySeconds = 0
+  let volume = 0.8
+
+  // ---- YouTube IFrame player ----------------------------------------------
+  let ytPlayer = null
+  let ytReady = false
+  let pendingYt = null
+  window.onYouTubeIframeAPIReady = function () {
+    ytPlayer = new YT.Player('yt', {
+      height: '180',
+      width: '320',
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, rel: 0, playsinline: 1 },
+      events: {
+        onReady: () => {
+          ytReady = true
+          if (pendingYt) {
+            const v = pendingYt
+            pendingYt = null
+            playYt(v)
+          }
+        },
+        onStateChange: (e) => {
+          if (e.data === YT.PlayerState.ENDED && current) send({ type: 'ended', queueItemId: current.id })
+        },
+        onError: () => {
+          if (current) send({ type: 'ended', queueItemId: current.id })
+        }
+      }
+    })
+  }
+  function playYt(videoId) {
+    if (!ytReady || !ytPlayer) {
+      pendingYt = videoId
+      return
+    }
+    try {
+      ytPlayer.setVolume(Math.round(volume * 100))
+      ytPlayer.loadVideoById(videoId)
+      ytPlayer.playVideo()
+    } catch (err) {
+      send({ type: 'error', message: 'youtube: ' + err.message })
+    }
+  }
+  function stopYt() {
+    pendingYt = null
+    if (ytReady && ytPlayer) {
+      try {
+        ytPlayer.stopVideo()
+      } catch (_) {
+        /* ignore */
+      }
+    }
+  }
 
   function applyConfig(cfg) {
-    if (typeof cfg.volume === 'number') audio.volume = cfg.volume
+    if (typeof cfg.volume === 'number') {
+      volume = cfg.volume
+      audio.volume = cfg.volume
+      if (ytReady && ytPlayer) ytPlayer.setVolume(Math.round(cfg.volume * 100))
+    }
     if (typeof cfg.displaySeconds === 'number') displaySeconds = cfg.displaySeconds
     vinyl.classList.toggle('hidden', cfg.vinylEnabled === false)
     card.classList.toggle('text-hidden', cfg.showNowPlaying === false)
@@ -40,6 +96,7 @@
 
     bar.style.width = '0%'
     const pb = item.playback || {}
+    stopYt()
     if (pb.kind === 'audio' && pb.url) {
       // We play the audio ourselves (Yandex Plus stream or Spotify preview).
       audio.src = pb.url
@@ -47,6 +104,11 @@
       if (playPromise && playPromise.catch) {
         playPromise.catch((err) => send({ type: 'error', message: 'autoplay: ' + err.message }))
       }
+    } else if (pb.kind === 'youtube' && pb.videoId) {
+      // Free playback for everyone — plays right here via the YouTube player.
+      audio.removeAttribute('src')
+      audio.load()
+      playYt(pb.videoId)
     } else {
       // External app plays the sound (e.g. Spotify desktop). Vinyl only.
       audio.removeAttribute('src')
@@ -69,6 +131,7 @@
     audio.pause()
     audio.removeAttribute('src')
     audio.load()
+    stopYt()
     card.classList.remove('visible')
     disc.classList.remove('spinning')
     vinyl.classList.remove('playing')

@@ -6,6 +6,19 @@ import { bus } from './bus'
 let getWin: () => BrowserWindow | null = () => null
 let manual = false
 
+/** Turn electron-updater's releaseNotes (string | array | null) into plain text. */
+function formatNotes(notes: unknown): string {
+  if (!notes) return ''
+  const raw = Array.isArray(notes)
+    ? notes.map((n: any) => n?.note ?? '').join('\n')
+    : String(notes)
+  return raw
+    .replace(/<[^>]+>/g, '') // strip any HTML
+    .replace(/&nbsp;/g, ' ')
+    .trim()
+    .slice(0, 800)
+}
+
 export function initUpdater(getWindow: () => BrowserWindow | null): void {
   getWin = getWindow
   autoUpdater.autoDownload = false
@@ -14,6 +27,7 @@ export function initUpdater(getWindow: () => BrowserWindow | null): void {
   autoUpdater.on('update-available', async (info) => {
     const win = getWin()
     if (!win) return
+    const notes = formatNotes(info.releaseNotes)
     const { response } = await dialog.showMessageBox(win, {
       type: 'info',
       buttons: ['Обновить сейчас', 'Позже'],
@@ -21,7 +35,7 @@ export function initUpdater(getWindow: () => BrowserWindow | null): void {
       cancelId: 1,
       title: 'Доступно обновление',
       message: `Доступна новая версия LS Music ${info.version}`,
-      detail: 'Скачать и установить сейчас?'
+      detail: (notes ? `Что нового:\n${notes}\n\n` : '') + 'Скачать и установить сейчас?'
     })
     if (response === 0) {
       bus.info('Скачиваю обновление…')

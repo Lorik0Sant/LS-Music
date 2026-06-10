@@ -102,6 +102,69 @@ a {
   color: var(--muted);
 }
 
+.topnav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 6px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.topnav button {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13.5px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.topnav button:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.topnav .nav-exit {
+  margin-left: auto;
+  color: var(--err);
+}
+.topnav .nav-exit:hover {
+  background: var(--err);
+  color: #fff;
+}
+
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  backdrop-filter: blur(3px);
+}
+.modal {
+  width: 420px;
+  max-width: 90vw;
+  background: linear-gradient(180deg, var(--card), var(--bg-2));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+.modal h2 {
+  margin: 8px 0;
+}
+.modal .row {
+  justify-content: center;
+}
+.modal-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

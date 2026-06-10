@@ -1,11 +1,10 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
 import { join } from 'path'
 import { appState } from './app-state'
 import { iconPath } from './assets'
 import { bus } from './bus'
 import { loadSettings } from './config'
 import { registerIpc } from './ipc'
-import { buildAppMenu } from './menu'
 import { startOverlayServer } from './overlay-server'
 import { queue } from './queue'
 import { setStatus } from './status'
@@ -23,7 +22,7 @@ function createWindow(): void {
     minWidth: 880,
     minHeight: 600,
     show: false,
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
     icon: iconPath(),
     backgroundColor: '#0e0e14',
     title: 'LS Music',
@@ -72,8 +71,8 @@ app.whenReady().then(async () => {
   } catch (err) {
     bus.error(`Не удалось запустить overlay-сервер: ${(err as Error).message}`)
   }
+  Menu.setApplicationMenu(null) // we use a custom in-app top nav instead
   createWindow()
-  buildAppMenu(getWin)
   createTray(getWin)
   initUpdater(getWin)
   restoreSessions()

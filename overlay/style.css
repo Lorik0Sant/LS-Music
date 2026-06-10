@@ -27,6 +27,18 @@ body {
   padding: 32px;
 }
 
+/* YouTube player: rendered (so audio autoplays) but invisible — vinyl shows instead. */
+.yt {
+  position: absolute;
+  width: 320px;
+  height: 180px;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* ---- Card ----------------------------------------------------------------*/
 .card {
   display: flex;

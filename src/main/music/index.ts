@@ -3,10 +3,12 @@ import { loadSettings } from '../config'
 import { MusicProvider } from './provider'
 import { SpotifyProvider } from './spotify'
 import { YandexProvider } from './yandex'
+import { YoutubeProvider } from './youtube'
 
 const providers: Record<ProviderId, MusicProvider> = {
   yandex: new YandexProvider(),
-  spotify: new SpotifyProvider()
+  spotify: new SpotifyProvider(),
+  youtube: new YoutubeProvider()
 }
 
 export function getProvider(id: ProviderId): MusicProvider {

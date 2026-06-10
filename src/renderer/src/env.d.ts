@@ -36,6 +36,8 @@ export interface LsApi {
   queueRequest(query: string): Promise<void>
   getVersion(): Promise<string>
   openExternal(url: string): Promise<void>
+  quit(): Promise<void>
+  checkUpdates(): Promise<void>
 
   onStatus(cb: (s: AppStatus) => void): () => void
   onLog(cb: (e: LogEntry) => void): () => void
