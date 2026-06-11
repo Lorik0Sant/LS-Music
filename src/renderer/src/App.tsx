@@ -56,6 +56,7 @@ export default function App(): JSX.Element {
   const [spotifyMsg, setSpotifyMsg] = useState('')
   const [manual, setManual] = useState('')
   const [version, setVersion] = useState('')
+  const [rewardCost, setRewardCost] = useState(100)
   const [modal, setModal] = useState<null | 'about' | 'donate'>(null)
   const logRef = useRef<HTMLDivElement>(null)
 
@@ -110,10 +111,12 @@ export default function App(): JSX.Element {
   }
 
   async function createReward(): Promise<void> {
-    const cost = Number(prompt('Стоимость награды в баллах канала:', '100') || '0')
-    if (!cost) return
+    if (status!.twitch !== 'connected') {
+      alert('Сначала войдите в Twitch.')
+      return
+    }
     try {
-      const r = await window.api.twitchCreateReward(cost)
+      const r = await window.api.twitchCreateReward(rewardCost || 100)
       await window.api.getSettings().then(setSettings)
       alert(`Награда «${r.title}» создана (${r.cost} баллов). Возврат баллов включён.`)
     } catch (e) {
@@ -336,15 +339,25 @@ export default function App(): JSX.Element {
 
           <div className="reward">
             <div className="row">
+              <span className="muted small">Цена, баллов:</span>
+              <input
+                type="number"
+                min={1}
+                style={{ width: 90 }}
+                value={rewardCost}
+                onChange={(e) => setRewardCost(Number(e.target.value))}
+              />
               <button
                 className="primary"
                 disabled={status.twitch !== 'connected'}
                 onClick={createReward}
               >
-                Создать награду (с возвратом баллов)
+                Создать награду (возврат баллов)
               </button>
+            </div>
+            <div className="row">
               <button className="ghost" onClick={loadRewards} disabled={status.twitch !== 'connected'}>
-                Загрузить награды
+                Загрузить существующие награды
               </button>
             </div>
             <p className="muted small">
