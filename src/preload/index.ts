@@ -23,6 +23,8 @@ const api = {
   twitchDisconnect: (): Promise<void> => ipcRenderer.invoke('twitch:disconnect'),
   twitchLogout: (): Promise<void> => ipcRenderer.invoke('twitch:logout'),
   twitchRewards: (): Promise<TwitchReward[]> => ipcRenderer.invoke('twitch:rewards'),
+  twitchCreateReward: (cost: number): Promise<TwitchReward> =>
+    ipcRenderer.invoke('twitch:create-reward', cost),
 
   verifyProvider: (id: ProviderId): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('provider:verify', id),

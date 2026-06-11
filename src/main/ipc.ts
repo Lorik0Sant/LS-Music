@@ -9,7 +9,7 @@ import { spotifyLogin, twitchLogin, yandexLogin } from './oauth'
 import { overlayUrl, pushOverlayConfig } from './overlay-server'
 import { queue } from './queue'
 import { getStatus, setStatus } from './status'
-import { listRewards, logout, pollDeviceToken, startDeviceAuth } from './twitch/auth'
+import { createReward, listRewards, logout, pollDeviceToken, startDeviceAuth } from './twitch/auth'
 import { twitchEventSub } from './twitch/eventsub'
 
 function broadcast(channel: string, payload: unknown): void {
@@ -84,6 +84,13 @@ export function registerIpc(): void {
     logout()
   })
   ipcMain.handle('twitch:rewards', () => listRewards())
+  ipcMain.handle('twitch:create-reward', async (_e, cost: number) => {
+    const r = await createReward('Заказать трек 🎵', cost || 100)
+    const s = loadSettings()
+    saveSettings({ ...s, twitch: { ...s.twitch, rewardId: r.id, rewardTitle: r.title } })
+    bus.info(`Создана награда «${r.title}» (${r.cost} баллов) — возврат баллов включён`)
+    return r
+  })
 
   // ---- Music providers ----------------------------------------------------
   ipcMain.handle('yandex:login', async () => {

@@ -22,6 +22,7 @@ export interface LsApi {
   twitchDisconnect(): Promise<void>
   twitchLogout(): Promise<void>
   twitchRewards(): Promise<TwitchReward[]>
+  twitchCreateReward(cost: number): Promise<TwitchReward>
 
   verifyProvider(id: ProviderId): Promise<{ ok: boolean; error?: string }>
   yandexLogin(): Promise<{ ok: boolean; error?: string }>

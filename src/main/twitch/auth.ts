@@ -4,7 +4,7 @@ import { loadSettings, patchSettings } from '../config'
 
 const ID_BASE = 'https://id.twitch.tv/oauth2'
 const HELIX = 'https://api.twitch.tv/helix'
-const SCOPES = ['channel:read:redemptions']
+const SCOPES = ['channel:read:redemptions', 'channel:manage:redemptions']
 
 export interface DeviceCodeStart extends DeviceAuthInfo {
   deviceCode: string
@@ -113,6 +113,56 @@ export async function listRewards(): Promise<TwitchReward[]> {
   if (!res.ok) throw new Error(`Helix custom_rewards: ошибка ${res.status}`)
   const data = (await res.json()) as any
   return (data?.data ?? []).map((r: any) => ({ id: r.id, title: r.title, cost: r.cost }))
+}
+
+/** Create a Channel Points reward owned by this app (so we can refund it). */
+export async function createReward(title: string, cost: number): Promise<TwitchReward> {
+  const s = loadSettings().twitch
+  if (!s.userId) throw new Error('Сначала авторизуйтесь в Twitch')
+  const res = await fetch(`${HELIX}/channel_points/custom_rewards?broadcaster_id=${s.userId}`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title,
+      cost,
+      is_user_input_required: true,
+      prompt: 'Напиши название трека (исполнитель — название)',
+      should_redemptions_skip_request_queue: false
+    })
+  })
+  if (res.status === 403)
+    throw new Error('Награды доступны только аффилиатам/партнёрам Twitch')
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`Создание награды: ошибка ${res.status} ${t}`)
+  }
+  const r = (await res.json()) as any
+  const reward = r.data[0]
+  return { id: reward.id, title: reward.title, cost: reward.cost }
+}
+
+/**
+ * Mark a redemption FULFILLED (success) or CANCELED (refunds the points).
+ * Works only for rewards created by THIS app's Client-ID.
+ */
+export async function updateRedemption(
+  rewardId: string,
+  redemptionId: string,
+  status: 'FULFILLED' | 'CANCELED'
+): Promise<void> {
+  const s = loadSettings().twitch
+  const url =
+    `${HELIX}/channel_points/custom_rewards/redemptions` +
+    `?id=${redemptionId}&broadcaster_id=${s.userId}&reward_id=${rewardId}`
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  })
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`update redemption ${status}: ${res.status} ${t}`)
+  }
 }
 
 export function logout(): void {

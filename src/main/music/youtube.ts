@@ -18,9 +18,9 @@ export class YoutubeProvider implements MusicProvider {
     if (!t) throw new Error('YouTube: поиск не вернул результатов')
   }
 
-  async search(query: string): Promise<Track | null> {
-    // sp=EgIQAQ%3D%3D restricts results to videos only.
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%3D%3D`
+  private async fetchResults(query: string, videosOnly: boolean): Promise<string> {
+    const filter = videosOnly ? '&sp=EgIQAQ%3D%3D' : ''
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}${filter}`
     const res = await fetch(url, {
       headers: {
         'User-Agent':
@@ -31,9 +31,17 @@ export class YoutubeProvider implements MusicProvider {
       }
     })
     if (!res.ok) throw new Error(`YouTube: ошибка поиска ${res.status}`)
-    const html = await res.text()
+    return res.text()
+  }
 
-    const idMatch = html.match(/"videoId":"([\w-]{11})"/)
+  async search(query: string): Promise<Track | null> {
+    // Try videos-only first, then fall back to an unfiltered search.
+    let html = await this.fetchResults(query, true)
+    let idMatch = html.match(/"videoId":"([\w-]{11})"/)
+    if (!idMatch) {
+      html = await this.fetchResults(query, false)
+      idMatch = html.match(/"videoId":"([\w-]{11})"/)
+    }
     if (!idMatch) return null
     const videoId = idMatch[1]
 

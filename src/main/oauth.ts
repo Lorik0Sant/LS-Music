@@ -102,7 +102,7 @@ export function twitchClientId(): string {
 
 function twitchAuthUrl(forceVerify: boolean): string {
   const clientId = twitchClientId()
-  const scope = 'channel:read:redemptions'
+  const scope = 'channel:read:redemptions channel:manage:redemptions'
   return (
     `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}` +
     `&redirect_uri=${encodeURIComponent(TWITCH_REDIRECT)}` +

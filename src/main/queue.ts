@@ -4,6 +4,13 @@ import { QueueItem } from '../shared/types'
 import { bus } from './bus'
 import { activeProvider } from './music'
 import { setStatus } from './status'
+import { updateRedemption } from './twitch/auth'
+
+/** Channel Points redemption context, so we can fulfil/refund the points. */
+export interface Redemption {
+  rewardId: string
+  redemptionId: string
+}
 
 class PlaybackQueue {
   private pending: QueueItem[] = []
@@ -11,9 +18,26 @@ class PlaybackQueue {
   private externalTimer: NodeJS.Timeout | null = null
 
   init(): void {
-    bus.on('request:track', ({ query, requestedBy }) => {
-      void this.addRequest(query, requestedBy)
+    bus.on('request:track', ({ query, requestedBy, redemption }) => {
+      void this.addRequest(query, requestedBy, redemption)
     })
+  }
+
+  /** Refund the viewer's points (CANCELED) or mark done (FULFILLED). */
+  private async resolveRedemption(
+    redemption: Redemption | undefined,
+    status: 'FULFILLED' | 'CANCELED'
+  ): Promise<void> {
+    if (!redemption) return
+    try {
+      await updateRedemption(redemption.rewardId, redemption.redemptionId, status)
+      if (status === 'CANCELED') bus.info('Баллы возвращены зрителю (трек не найден)')
+    } catch (err) {
+      bus.warn(
+        `Не удалось ${status === 'CANCELED' ? 'вернуть баллы' : 'отметить награду'}: ` +
+          `${(err as Error).message}. Возврат работает только для награды, созданной этим приложением.`
+      )
+    }
   }
 
   list(): QueueItem[] {
@@ -28,10 +52,11 @@ class PlaybackQueue {
     bus.emit('queue:update', this.list())
   }
 
-  async addRequest(query: string, requestedBy: string): Promise<void> {
+  async addRequest(query: string, requestedBy: string, redemption?: Redemption): Promise<void> {
     const provider = activeProvider()
     if (!provider.isConfigured()) {
       bus.warn(`Запрос «${query}» проигнорирован: провайдер музыки не настроен`)
+      await this.resolveRedemption(redemption, 'CANCELED')
       return
     }
     try {
@@ -39,6 +64,7 @@ class PlaybackQueue {
       const track = await provider.search(query)
       if (!track) {
         bus.warn(`Ничего не найдено по запросу «${query}»`)
+        await this.resolveRedemption(redemption, 'CANCELED')
         return
       }
       const playback = await provider.resolvePlayback(track)
@@ -53,9 +79,11 @@ class PlaybackQueue {
       this.pending.push(item)
       bus.info(`В очередь: ${track.artists.join(', ')} — ${track.title}`)
       this.emitQueue()
+      await this.resolveRedemption(redemption, 'FULFILLED')
       if (!this.current) this.playNext()
     } catch (err) {
       bus.error(`Не удалось обработать «${query}»: ${(err as Error).message}`)
+      await this.resolveRedemption(redemption, 'CANCELED')
     }
   }
 

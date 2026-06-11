@@ -101,11 +101,12 @@ class TwitchEventSub {
 
     const query = String(event.user_input ?? '').trim()
     const requestedBy = event.user_name || event.user_login || 'зритель'
+    const redemption = { rewardId: event.reward?.id, redemptionId: event.id }
     if (!query) {
       bus.warn(`${requestedBy} активировал награду, но не указал трек`)
       return
     }
-    bus.emit('request:track', { query, requestedBy })
+    bus.emit('request:track', { query, requestedBy, redemption })
   }
 
   private async subscribe(): Promise<void> {

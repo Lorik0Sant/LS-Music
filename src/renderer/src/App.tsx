@@ -109,6 +109,18 @@ export default function App(): JSX.Element {
     }
   }
 
+  async function createReward(): Promise<void> {
+    const cost = Number(prompt('Стоимость награды в баллах канала:', '100') || '0')
+    if (!cost) return
+    try {
+      const r = await window.api.twitchCreateReward(cost)
+      await window.api.getSettings().then(setSettings)
+      alert(`Награда «${r.title}» создана (${r.cost} баллов). Возврат баллов включён.`)
+    } catch (e) {
+      alert('Не удалось создать награду: ' + (e as Error).message)
+    }
+  }
+
   async function verifyYandex(): Promise<void> {
     setYandexMsg('Проверяем…')
     const r = await window.api.verifyProvider('yandex')
@@ -277,7 +289,9 @@ export default function App(): JSX.Element {
             )}
             {settings.activeProvider === 'spotify' && (
               <>
-                <b>Spotify</b> — играет в приложении Spotify (без Premium с рекламой).
+                <b>Spotify</b> не умеет играть полный трек в оверлее (ограничение
+                Spotify API) — поэтому открывается приложение. Для звука <b>в оверлее</b>{' '}
+                выбери <b>YouTube</b>, либо включи у Spotify режим «Превью 30 сек».
               </>
             )}
           </p>
@@ -322,11 +336,22 @@ export default function App(): JSX.Element {
 
           <div className="reward">
             <div className="row">
+              <button
+                className="primary"
+                disabled={status.twitch !== 'connected'}
+                onClick={createReward}
+              >
+                Создать награду (с возвратом баллов)
+              </button>
               <button className="ghost" onClick={loadRewards} disabled={status.twitch !== 'connected'}>
                 Загрузить награды
               </button>
-              <span className="muted">Текущая: {t.rewardTitle || '—'}</span>
             </div>
+            <p className="muted small">
+              Текущая награда: <b>{t.rewardTitle || '—'}</b>. Возврат баллов при «не
+              найдено» работает <b>только для награды, созданной этой кнопкой</b> (Twitch
+              разрешает управлять только своими наградами).
+            </p>
             {rewards.length > 0 && (
               <select
                 value={t.rewardId ?? ''}

@@ -30,7 +30,11 @@ export interface BusEvents {
   status: (s: AppStatus) => void
   'queue:update': (items: QueueItem[]) => void
   /** A viewer requested a track via Twitch Channel Points. */
-  'request:track': (req: { query: string; requestedBy: string }) => void
+  'request:track': (req: {
+    query: string
+    requestedBy: string
+    redemption?: { rewardId: string; redemptionId: string }
+  }) => void
 }
 
 export const bus = new Bus()
