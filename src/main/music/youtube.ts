@@ -56,8 +56,11 @@ export class YoutubeProvider implements MusicProvider {
     if (!html) throw new Error('YouTube недоступен (сеть/блокировка). Попробуйте VPN.')
     let idMatch = html.match(/"videoId":"([\w-]{11})"/)
     if (!idMatch) {
-      html = await this.fetchResults(query, false)
-      idMatch = html ? html.match(/"videoId":"([\w-]{11})"/) : null
+      const more = await this.fetchResults(query, false)
+      if (more) {
+        html = more
+        idMatch = more.match(/"videoId":"([\w-]{11})"/)
+      }
     }
     if (!idMatch) return null
     const videoId = idMatch[1]
