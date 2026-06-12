@@ -18,29 +18,46 @@ export class YoutubeProvider implements MusicProvider {
     if (!t) throw new Error('YouTube: поиск не вернул результатов')
   }
 
-  private async fetchResults(query: string, videosOnly: boolean): Promise<string> {
+  /** GET a YouTube results page with retries + timeout (YT is flaky/throttled in some regions). */
+  private async fetchResults(query: string, videosOnly: boolean): Promise<string | null> {
     const filter = videosOnly ? '&sp=EgIQAQ%3D%3D' : ''
-    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}${filter}`
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        // Skip the EU consent interstitial that otherwise hides results.
-        Cookie: 'CONSENT=YES+1; SOCS=CAI'
+    // Try a couple of hosts in case one is throttled.
+    const hosts = ['https://www.youtube.com', 'https://m.youtube.com']
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const host = hosts[attempt % hosts.length]
+      const url = `${host}/results?search_query=${encodeURIComponent(query)}${filter}`
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 9000)
+      try {
+        const res = await fetch(url, {
+          signal: ctrl.signal,
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            Cookie: 'CONSENT=YES+1; SOCS=CAI'
+          }
+        })
+        if (res.ok) return await res.text()
+      } catch {
+        // network error / timeout — retry
+      } finally {
+        clearTimeout(timer)
       }
-    })
-    if (!res.ok) throw new Error(`YouTube: ошибка поиска ${res.status}`)
-    return res.text()
+      await new Promise((r) => setTimeout(r, 600))
+    }
+    return null
   }
 
   async search(query: string): Promise<Track | null> {
     // Try videos-only first, then fall back to an unfiltered search.
     let html = await this.fetchResults(query, true)
+    if (!html) html = await this.fetchResults(query, false)
+    if (!html) throw new Error('YouTube недоступен (сеть/блокировка). Попробуйте VPN.')
     let idMatch = html.match(/"videoId":"([\w-]{11})"/)
     if (!idMatch) {
       html = await this.fetchResults(query, false)
-      idMatch = html.match(/"videoId":"([\w-]{11})"/)
+      idMatch = html ? html.match(/"videoId":"([\w-]{11})"/) : null
     }
     if (!idMatch) return null
     const videoId = idMatch[1]
