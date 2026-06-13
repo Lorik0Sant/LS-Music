@@ -40,6 +40,15 @@ export interface QueueItem {
 
 export type YandexMode = 'stream' | 'app'
 export type SpotifyMode = 'app' | 'preview'
+export type OverlayTheme = 'classic' | 'neon' | 'minimal' | 'gold' | 'cover'
+
+export const OVERLAY_THEMES: { id: OverlayTheme; label: string }[] = [
+  { id: 'classic', label: 'Классика (фиолетовый винил)' },
+  { id: 'neon', label: 'Неон (киберпанк)' },
+  { id: 'minimal', label: 'Минимал (компактная плашка)' },
+  { id: 'gold', label: 'Золото (премиум)' },
+  { id: 'cover', label: 'Обложка (большая картинка)' }
+]
 
 export interface Settings {
   /** Which service fulfils track requests. */
@@ -77,6 +86,8 @@ export interface Settings {
     volume: number
     /** Auto-hide the card this many seconds after a track starts. 0 = whole track. */
     displaySeconds: number
+    /** Visual style of the overlay (vinyl + now-playing card). */
+    theme: OverlayTheme
   }
 }
 
@@ -119,6 +130,7 @@ export interface OverlayConfig {
   vinylEnabled: boolean
   showNowPlaying: boolean
   displaySeconds: number
+  theme: OverlayTheme
 }
 
 export type ServerToOverlay =
@@ -146,5 +158,12 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   yandex: { token: '', mode: 'stream' },
   spotify: { clientId: '', clientSecret: '', accessToken: null, refreshToken: null, mode: 'app' },
-  overlay: { vinylEnabled: true, port: 7895, showNowPlaying: true, volume: 0.8, displaySeconds: 0 }
+  overlay: {
+    vinylEnabled: true,
+    port: 7895,
+    showNowPlaying: true,
+    volume: 0.8,
+    displaySeconds: 0,
+    theme: 'classic'
+  }
 }

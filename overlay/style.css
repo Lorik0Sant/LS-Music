@@ -222,3 +222,104 @@ body {
   background: var(--accent);
   transition: width 0.25s linear;
 }
+
+/* ===== Themes ============================================================ */
+
+/* Neon / cyberpunk */
+body[data-theme='neon'] {
+  --accent: #00e5ff;
+}
+body[data-theme='neon'] .card {
+  background: rgba(8, 10, 22, 0.85);
+  border-color: rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.35), 0 0 60px rgba(255, 0, 200, 0.2);
+}
+body[data-theme='neon'] .label {
+  background: linear-gradient(135deg, #ff2bd6, #00e5ff);
+}
+body[data-theme='neon'] .disc {
+  box-shadow: inset 0 0 0 2px rgba(0, 229, 255, 0.25), 0 0 26px rgba(0, 229, 255, 0.55);
+}
+body[data-theme='neon'] .eyebrow {
+  color: #00e5ff;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.9);
+}
+body[data-theme='neon'] .title {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+}
+body[data-theme='neon'] .bar {
+  background: linear-gradient(90deg, #00e5ff, #ff2bd6);
+}
+
+/* Gold / premium */
+body[data-theme='gold'] {
+  --accent: #e8c66b;
+}
+body[data-theme='gold'] .card {
+  background: linear-gradient(180deg, rgba(34, 27, 11, 0.92), rgba(12, 10, 6, 0.94));
+  border-color: rgba(232, 198, 107, 0.5);
+}
+body[data-theme='gold'] .label {
+  background: linear-gradient(135deg, #f3d98a, #b8860b);
+}
+body[data-theme='gold'] .disc {
+  box-shadow: inset 0 0 0 2px rgba(232, 198, 107, 0.3), 0 0 18px rgba(232, 198, 107, 0.35);
+}
+body[data-theme='gold'] .eyebrow {
+  color: #e8c66b;
+}
+body[data-theme='gold'] .bar {
+  background: linear-gradient(90deg, #f3d98a, #b8860b);
+}
+
+/* Minimal — small square cover + compact text, no spinning disc */
+body[data-theme='minimal'] .vinyl {
+  width: 56px;
+  height: 56px;
+}
+body[data-theme='minimal'] .disc {
+  animation: none !important;
+  background: #1a1a22;
+  box-shadow: none;
+}
+body[data-theme='minimal'] .grooves,
+body[data-theme='minimal'] .shine,
+body[data-theme='minimal'] .hole,
+body[data-theme='minimal'] .tonearm {
+  display: none;
+}
+body[data-theme='minimal'] .label {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  border-radius: 10px;
+  box-shadow: none;
+}
+body[data-theme='minimal'] .card {
+  gap: 14px;
+  padding: 12px 20px 12px 12px;
+  border-radius: 14px;
+}
+body[data-theme='minimal'] .title {
+  font-size: 18px;
+}
+body[data-theme='minimal'] .artist {
+  font-size: 14px;
+}
+body[data-theme='minimal'] .progress {
+  display: none;
+}
+
+/* Cover — big spinning album art */
+body[data-theme='cover'] .vinyl {
+  width: 168px;
+  height: 168px;
+}
+body[data-theme='cover'] .label {
+  width: 124px;
+  height: 124px;
+}
+body[data-theme='cover'] .title {
+  font-size: 24px;
+}

@@ -76,6 +76,7 @@
       if (ytReady && ytPlayer) ytPlayer.setVolume(Math.round(cfg.volume * 100))
     }
     if (typeof cfg.displaySeconds === 'number') displaySeconds = cfg.displaySeconds
+    if (cfg.theme) document.body.dataset.theme = cfg.theme
     vinyl.classList.toggle('hidden', cfg.vinylEnabled === false)
     card.classList.toggle('text-hidden', cfg.showNowPlaying === false)
   }

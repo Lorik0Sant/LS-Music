@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import logo from './logo.png'
 import { AUTHOR, LINKS, USDT_TRC20 } from '../../shared/links'
+import { OVERLAY_THEMES } from '../../shared/types'
 import type {
   AppStatus,
   ConnectionState,
@@ -515,6 +516,25 @@ export default function App(): JSX.Element {
               Копировать
             </button>
           </div>
+
+          <label className="field">
+            <span>Дизайн оверлея</span>
+            <select
+              value={settings.overlay.theme}
+              onChange={(e) =>
+                patch({ overlay: { ...settings.overlay, theme: e.target.value as never } })
+              }
+            >
+              {OVERLAY_THEMES.map((th) => (
+                <option key={th.id} value={th.id}>
+                  {th.label}
+                </option>
+              ))}
+            </select>
+            <span className="muted small">
+              Меняется в оверлее сразу. Если в OBS не обновилось — обнови кэш источника.
+            </span>
+          </label>
 
           <label className="toggle">
             <input

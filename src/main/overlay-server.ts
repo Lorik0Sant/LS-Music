@@ -5,7 +5,7 @@ import { createServer, Server } from 'http'
 import { join } from 'path'
 import { AddressInfo } from 'net'
 import { WebSocket, WebSocketServer } from 'ws'
-import { OverlayToServer, QueueItem, ServerToOverlay } from '../shared/types'
+import { OverlayConfig, OverlayToServer, QueueItem, ServerToOverlay } from '../shared/types'
 import { bus } from './bus'
 import { loadSettings } from './config'
 import { queue } from './queue'
@@ -24,18 +24,14 @@ function overlayDir(): string {
   return candidates.find((p) => existsSync(p)) ?? candidates[candidates.length - 1]
 }
 
-function overlayConfig(): {
-  volume: number
-  vinylEnabled: boolean
-  showNowPlaying: boolean
-  displaySeconds: number
-} {
+function overlayConfig(): OverlayConfig {
   const s = loadSettings().overlay
   return {
     volume: s.volume,
     vinylEnabled: s.vinylEnabled,
     showNowPlaying: s.showNowPlaying,
-    displaySeconds: s.displaySeconds
+    displaySeconds: s.displaySeconds,
+    theme: s.theme
   }
 }
 
