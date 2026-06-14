@@ -293,6 +293,7 @@ export default function App(): JSX.Element {
       )}
 
       <main className="grid">
+        <div className="col">
         {/* Active provider -------------------------------------------------*/}
         <Section title="Источник музыки" desc="Какой сервис проигрывает заказы зрителей.">
           <div className="seg">
@@ -561,8 +562,11 @@ export default function App(): JSX.Element {
           </details>
         </Section>
 
+        </div>
+
+        <div className="col">
         {/* Overlay ---------------------------------------------------------*/}
-        <Section title="Оверлей для OBS" desc="Добавьте Browser Source с этим адресом (фон прозрачный)." order={12}>
+        <Section title="Оверлей для OBS" desc="Добавьте Browser Source с этим адресом (фон прозрачный)." order={3}>
           <div className="row url-row">
             <code className="url">{overlayUrl}</code>
             <button className="ghost" onClick={() => navigator.clipboard.writeText(overlayUrl)}>
@@ -662,7 +666,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Player ----------------------------------------------------------*/}
-        <Section title="Плеер" desc="Управление музыкой во время стрима." order={11}>
+        <Section title="Плеер" desc="Управление музыкой во время стрима." order={1}>
           <div className="player">
             <button
               className="pbtn pbtn-main"
@@ -736,7 +740,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Queue -----------------------------------------------------------*/}
-        <Section title="Очередь" desc="Заказы зрителей. Можно протестировать вручную." order={10}>
+        <Section title="Очередь" desc="Заказы зрителей. Можно протестировать вручную." order={2}>
           {np ? (
             <div className="now">
               {np.track.coverUrl && <img src={np.track.coverUrl} alt="" />}
@@ -824,7 +828,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Log -------------------------------------------------------------*/}
-        <Section title="Лог" order={13}>
+        <Section title="Лог" order={4}>
           <div className="log" ref={logRef}>
             {logs.map((l, i) => (
               <div key={i} className={`log-line log-${l.level}`}>
@@ -834,6 +838,7 @@ export default function App(): JSX.Element {
             {logs.length === 0 && <div className="muted">Событий пока нет</div>}
           </div>
         </Section>
+        </div>
       </main>
     </div>
   )
