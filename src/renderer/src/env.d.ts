@@ -31,6 +31,7 @@ export interface LsApi {
 
   queueList(): Promise<QueueItem[]>
   queueSkip(): Promise<void>
+  playbackToggle(): Promise<void>
   queueClear(): Promise<void>
   queueRemove(id: string): Promise<void>
   queueMove(id: string, dir: -1 | 1): Promise<void>

@@ -11,7 +11,8 @@ const state: AppStatus = {
   activeProvider: loadSettings().activeProvider,
   overlayClients: 0,
   nowPlaying: null,
-  vinylEnabled: loadSettings().overlay.vinylEnabled
+  vinylEnabled: loadSettings().overlay.vinylEnabled,
+  paused: false
 }
 
 export function getStatus(): AppStatus {

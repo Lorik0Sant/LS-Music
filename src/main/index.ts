@@ -4,6 +4,7 @@ import { appState } from './app-state'
 import { iconPath } from './assets'
 import { bus } from './bus'
 import { loadSettings } from './config'
+import { registerHotkeys, unregisterHotkeys } from './hotkeys'
 import { registerIpc } from './ipc'
 import { startOverlayServer } from './overlay-server'
 import { queue } from './queue'
@@ -75,6 +76,7 @@ app.whenReady().then(async () => {
   createWindow()
   createTray(getWin)
   initUpdater(getWin)
+  registerHotkeys()
   restoreSessions()
   // Quiet update check shortly after launch.
   setTimeout(() => checkForUpdates(false), 4000)
@@ -100,6 +102,10 @@ function restoreSessions(): void {
 
 app.on('before-quit', () => {
   appState.quitting = true
+})
+
+app.on('will-quit', () => {
+  unregisterHotkeys()
 })
 
 // Stay alive in the tray when the window is closed.

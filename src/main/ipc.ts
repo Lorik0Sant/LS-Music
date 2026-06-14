@@ -4,9 +4,10 @@ import { appState } from './app-state'
 import { bus } from './bus'
 import { checkForUpdates } from './updater'
 import { loadSettings, saveSettings } from './config'
+import { registerHotkeys } from './hotkeys'
 import { getProvider } from './music'
 import { spotifyLogin, twitchLogin, yandexLogin } from './oauth'
-import { overlayUrl, pushOverlayConfig } from './overlay-server'
+import { overlayUrl, pushOverlayConfig, togglePaused } from './overlay-server'
 import { queue } from './queue'
 import { getStatus, setStatus } from './status'
 import { createReward, listRewards, logout, pollDeviceToken, startDeviceAuth } from './twitch/auth'
@@ -29,6 +30,7 @@ export function registerIpc(): void {
   ipcMain.handle('settings:save', (_e, next: Settings) => {
     const saved = saveSettings(next)
     pushOverlayConfig()
+    registerHotkeys()
     setStatus({ vinylEnabled: saved.overlay.vinylEnabled, activeProvider: saved.activeProvider })
     return saved
   })
@@ -144,6 +146,7 @@ export function registerIpc(): void {
   })
 
   // ---- Queue --------------------------------------------------------------
+  ipcMain.handle('playback:toggle', () => togglePaused())
   ipcMain.handle('queue:list', () => queue.list())
   ipcMain.handle('queue:skip', () => queue.skip())
   ipcMain.handle('queue:clear', () => queue.clear())

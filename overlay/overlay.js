@@ -155,9 +155,34 @@
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg))
   }
 
+  function pause() {
+    if (!audio.paused) audio.pause()
+    if (ytReady && ytPlayer) {
+      try {
+        ytPlayer.pauseVideo()
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    disc.classList.remove('spinning')
+  }
+
+  function resume() {
+    if (!current) return
+    const pb = current.playback || {}
+    if (pb.kind === 'youtube') {
+      if (ytReady && ytPlayer) ytPlayer.playVideo()
+    } else if (audio.src) {
+      audio.play().catch(() => {})
+    }
+    disc.classList.add('spinning')
+  }
+
   function handle(msg) {
     if (msg.type === 'play') show(msg.item, msg)
     else if (msg.type === 'stop') stop()
+    else if (msg.type === 'pause') pause()
+    else if (msg.type === 'resume') resume()
     else if (msg.type === 'config') applyConfig(msg)
   }
 

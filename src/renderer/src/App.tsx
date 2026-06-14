@@ -59,6 +59,7 @@ export default function App(): JSX.Element {
   const [version, setVersion] = useState('')
   const [rewardCost, setRewardCost] = useState(100)
   const [modal, setModal] = useState<null | 'about' | 'donate'>(null)
+  const [capturing, setCapturing] = useState<null | 'playPause' | 'skip'>(null)
   const logRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -78,6 +79,40 @@ export default function App(): JSX.Element {
   useEffect(() => {
     logRef.current?.scrollTo(0, logRef.current.scrollHeight)
   }, [logs])
+
+  // Capture a key press to bind a global hotkey.
+  useEffect(() => {
+    if (!capturing) return
+    const onKey = (e: KeyboardEvent): void => {
+      e.preventDefault()
+      if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
+      const mods: string[] = []
+      if (e.ctrlKey) mods.push('Ctrl')
+      if (e.altKey) mods.push('Alt')
+      if (e.shiftKey) mods.push('Shift')
+      if (e.metaKey) mods.push('Super')
+      const special: Record<string, string> = {
+        ' ': 'Space',
+        ArrowUp: 'Up',
+        ArrowDown: 'Down',
+        ArrowLeft: 'Left',
+        ArrowRight: 'Right',
+        Escape: 'Esc'
+      }
+      const key = special[e.key] ?? (e.key.length === 1 ? e.key.toUpperCase() : e.key)
+      const accel = [...mods, key].join('+')
+      const field = capturing
+      setCapturing(null)
+      setSettings((s) => {
+        if (!s) return s
+        const next = { ...s, hotkeys: { ...s.hotkeys, [field]: accel } }
+        window.api.saveSettings(next)
+        return next
+      })
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [capturing])
 
   if (!settings || !status) return <div className="loading">Загрузка…</div>
 
@@ -622,6 +657,62 @@ export default function App(): JSX.Element {
               onBlur={() => patch({ overlay: { ...settings.overlay } })}
             />
           </label>
+        </Section>
+
+        {/* Player + hotkeys ------------------------------------------------*/}
+        <Section title="Плеер и горячие клавиши" desc="Управление и глобальные клавиши (работают и со свёрнутым окном).">
+          <div className="row">
+            <button
+              className="primary big"
+              disabled={!np}
+              onClick={() => window.api.playbackToggle()}
+            >
+              {status.paused ? '▶ Продолжить' : '⏸ Пауза'}
+            </button>
+            <button className="ghost" disabled={!np} onClick={() => window.api.queueSkip()}>
+              ⏭ Следующий
+            </button>
+          </div>
+
+          {([
+            ['playPause', 'Пауза / Плей'],
+            ['skip', 'Следующий трек']
+          ] as const).map(([field, label]) => (
+            <div className="field" key={field}>
+              <span>{label}</span>
+              <div className="row">
+                <code className="url" style={{ minWidth: 120 }}>
+                  {capturing === field ? 'Нажмите клавишу…' : settings.hotkeys[field] || 'не задано'}
+                </code>
+                <button className="ghost" onClick={() => setCapturing(field)}>
+                  Назначить
+                </button>
+                <button
+                  className="ghost"
+                  onClick={() =>
+                    patch({
+                      hotkeys: {
+                        ...settings.hotkeys,
+                        [field]: field === 'skip' ? 'MediaNextTrack' : 'MediaPlayPause'
+                      }
+                    })
+                  }
+                >
+                  Медиа-клавиша
+                </button>
+                <button
+                  className="ghost"
+                  onClick={() => patch({ hotkeys: { ...settings.hotkeys, [field]: '' } })}
+                >
+                  Сброс
+                </button>
+              </div>
+            </div>
+          ))}
+          <p className="muted small">
+            Совет: бери F-клавиши, сочетания с Ctrl/Alt или «Медиа-клавиша» (▶❚❚) — её
+            шлёт большинство пультов и медиа-клавиатур.
+          </p>
         </Section>
 
         {/* Queue -----------------------------------------------------------*/}

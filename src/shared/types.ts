@@ -94,6 +94,11 @@ export interface Settings {
     /** Visual style of the overlay (vinyl + now-playing card). */
     theme: OverlayTheme
   }
+  /** Global hotkeys (Electron accelerator strings; empty = unset). */
+  hotkeys: {
+    playPause: string
+    skip: string
+  }
 }
 
 export interface DeviceAuthInfo {
@@ -120,6 +125,7 @@ export interface AppStatus {
   overlayClients: number
   nowPlaying: QueueItem | null
   vinylEnabled: boolean
+  paused: boolean
 }
 
 export interface LogEntry {
@@ -141,6 +147,8 @@ export interface OverlayConfig {
 export type ServerToOverlay =
   | ({ type: 'play'; item: QueueItem } & OverlayConfig)
   | { type: 'stop' }
+  | { type: 'pause' }
+  | { type: 'resume' }
   | ({ type: 'config' } & OverlayConfig)
 
 export type OverlayToServer =
@@ -171,5 +179,6 @@ export const DEFAULT_SETTINGS: Settings = {
     volume: 0.8,
     displaySeconds: 0,
     theme: 'classic'
-  }
+  },
+  hotkeys: { playPause: '', skip: '' }
 }

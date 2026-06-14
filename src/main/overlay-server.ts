@@ -14,6 +14,7 @@ import { setStatus } from './status'
 let server: Server | null = null
 let wss: WebSocketServer | null = null
 let lastPlay: ServerToOverlay | null = null
+let paused = false
 
 function overlayDir(): string {
   const candidates = [
@@ -93,10 +94,14 @@ export async function startOverlayServer(): Promise<number> {
 
   bus.on('overlay:play', (item: QueueItem) => {
     lastPlay = buildPlay(item)
+    paused = false
+    setStatus({ paused: false })
     broadcast(lastPlay)
   })
   bus.on('overlay:stop', () => {
     lastPlay = null
+    paused = false
+    setStatus({ paused: false })
     broadcast({ type: 'stop' })
   })
 
@@ -113,6 +118,17 @@ export async function startOverlayServer(): Promise<number> {
 /** Push live config (vinyl toggle, volume) to all connected overlays. */
 export function pushOverlayConfig(): void {
   broadcast({ type: 'config', ...overlayConfig() })
+}
+
+/** Pause / resume the currently playing track in the overlay. */
+export function setPaused(value: boolean): void {
+  paused = value
+  broadcast({ type: paused ? 'pause' : 'resume' })
+  setStatus({ paused })
+}
+
+export function togglePaused(): void {
+  setPaused(!paused)
 }
 
 export function overlayUrl(): string {
