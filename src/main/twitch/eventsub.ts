@@ -110,24 +110,22 @@ class TwitchEventSub {
         bus.warn(`${requestedBy} активировал награду, но не указал трек`)
         return
       }
+      // The track always plays right away. In moderation mode we DON'T fulfil
+      // the redemption — it stays pending so a mod/broadcaster can later reject
+      // it (refund) or accept it, at their discretion, without blocking playback.
       if (moderation) {
-        // Wait for the streamer/mods to accept it in Twitch's reward queue.
-        bus.info(`Запрос от ${requestedBy} ждёт подтверждения: «${query}»`)
-        return
+        bus.info(`Запрос от ${requestedBy}: «${query}» (на модерации — баллы можно вернуть в Twitch)`)
+        bus.emit('request:track', { query, requestedBy })
+      } else {
+        const redemption = { rewardId: event.reward?.id, redemptionId: event.id }
+        bus.emit('request:track', { query, requestedBy, redemption })
       }
-      // Auto mode: queue now, fulfil/refund the points ourselves.
-      const redemption = { rewardId: event.reward?.id, redemptionId: event.id }
-      bus.emit('request:track', { query, requestedBy, redemption })
     } else if (type === REDEMPTION_UPDATE) {
-      // Only meaningful in moderation mode (otherwise we cause these ourselves).
+      // Just log the mod/broadcaster's decision (playback already happened).
       if (!moderation) return
-      if (event.status === 'fulfilled') {
-        bus.info(`Запрос подтверждён: «${query}» (${requestedBy})`)
-        // No redemption ctx — Twitch already fulfilled it, don't touch points.
-        if (query) bus.emit('request:track', { query, requestedBy })
-      } else if (event.status === 'canceled') {
-        bus.info(`Запрос отклонён, баллы возвращены: «${query}» (${requestedBy})`)
-      }
+      if (event.status === 'fulfilled') bus.info(`Модератор принял: «${query}» (${requestedBy})`)
+      else if (event.status === 'canceled')
+        bus.info(`Модератор вернул баллы: «${query}» (${requestedBy})`)
     }
   }
 
