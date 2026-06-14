@@ -659,60 +659,78 @@ export default function App(): JSX.Element {
           </label>
         </Section>
 
-        {/* Player + hotkeys ------------------------------------------------*/}
-        <Section title="Плеер и горячие клавиши" desc="Управление и глобальные клавиши (работают и со свёрнутым окном).">
-          <div className="row">
+        {/* Player ----------------------------------------------------------*/}
+        <Section title="Плеер" desc="Управление музыкой во время стрима.">
+          <div className="player">
             <button
-              className="primary big"
+              className="pbtn pbtn-main"
               disabled={!np}
+              title={status.paused ? 'Продолжить' : 'Пауза'}
+              aria-label={status.paused ? 'Продолжить' : 'Пауза'}
               onClick={() => window.api.playbackToggle()}
             >
-              {status.paused ? '▶ Продолжить' : '⏸ Пауза'}
+              {status.paused ? '▶' : '⏸'}
             </button>
-            <button className="ghost" disabled={!np} onClick={() => window.api.queueSkip()}>
-              ⏭ Следующий
+            <button
+              className="pbtn"
+              disabled={!np}
+              title="Следующий трек"
+              aria-label="Следующий трек"
+              onClick={() => window.api.queueSkip()}
+            >
+              ⏭
             </button>
+            <span className="player-now">
+              {np ? `${np.track.artists.join(', ')} — ${np.track.title}` : 'ничего не играет'}
+            </span>
           </div>
 
-          {([
-            ['playPause', 'Пауза / Плей'],
-            ['skip', 'Следующий трек']
-          ] as const).map(([field, label]) => (
-            <div className="field" key={field}>
-              <span>{label}</span>
-              <div className="row">
-                <code className="url" style={{ minWidth: 120 }}>
-                  {capturing === field ? 'Нажмите клавишу…' : settings.hotkeys[field] || 'не задано'}
-                </code>
-                <button className="ghost" onClick={() => setCapturing(field)}>
-                  Назначить
-                </button>
-                <button
-                  className="ghost"
-                  onClick={() =>
-                    patch({
-                      hotkeys: {
-                        ...settings.hotkeys,
-                        [field]: field === 'skip' ? 'MediaNextTrack' : 'MediaPlayPause'
-                      }
-                    })
-                  }
-                >
-                  Медиа-клавиша
-                </button>
-                <button
-                  className="ghost"
-                  onClick={() => patch({ hotkeys: { ...settings.hotkeys, [field]: '' } })}
-                >
-                  Сброс
-                </button>
+          <details className="adv">
+            <summary>⌨️ Горячие клавиши (работают и со свёрнутым окном)</summary>
+            {(
+              [
+                ['playPause', 'Пауза / Плей'],
+                ['skip', 'Следующий трек']
+              ] as const
+            ).map(([field, label]) => (
+              <div className="field" key={field}>
+                <span>{label}</span>
+                <div className="row">
+                  <code className="url" style={{ minWidth: 110 }}>
+                    {capturing === field
+                      ? 'Нажмите клавишу…'
+                      : settings.hotkeys[field] || 'не задано'}
+                  </code>
+                  <button className="ghost" onClick={() => setCapturing(field)}>
+                    Назначить
+                  </button>
+                  <button
+                    className="ghost"
+                    onClick={() =>
+                      patch({
+                        hotkeys: {
+                          ...settings.hotkeys,
+                          [field]: field === 'skip' ? 'MediaNextTrack' : 'MediaPlayPause'
+                        }
+                      })
+                    }
+                  >
+                    Медиа
+                  </button>
+                  <button
+                    className="ghost"
+                    onClick={() => patch({ hotkeys: { ...settings.hotkeys, [field]: '' } })}
+                  >
+                    Сброс
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-          <p className="muted small">
-            Совет: бери F-клавиши, сочетания с Ctrl/Alt или «Медиа-клавиша» (▶❚❚) — её
-            шлёт большинство пультов и медиа-клавиатур.
-          </p>
+            ))}
+            <p className="muted small">
+              Бери F-клавиши, сочетания с Ctrl/Alt или «Медиа» (▶❚❚) — её шлёт
+              большинство пультов и медиа-клавиатур.
+            </p>
+          </details>
         </Section>
 
         {/* Queue -----------------------------------------------------------*/}
