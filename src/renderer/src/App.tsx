@@ -30,14 +30,16 @@ function Pill({ label, state }: { label: string; state: ConnectionState }): JSX.
 function Section({
   title,
   desc,
+  order,
   children
 }: {
   title: string
   desc?: string
+  order?: number
   children: React.ReactNode
 }): JSX.Element {
   return (
-    <section className="card">
+    <section className="card" style={order !== undefined ? { order } : undefined}>
       <h2>{title}</h2>
       {desc && <p className="muted">{desc}</p>}
       {children}
@@ -560,7 +562,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Overlay ---------------------------------------------------------*/}
-        <Section title="Оверлей для OBS" desc="Добавьте Browser Source с этим адресом (фон прозрачный).">
+        <Section title="Оверлей для OBS" desc="Добавьте Browser Source с этим адресом (фон прозрачный)." order={12}>
           <div className="row url-row">
             <code className="url">{overlayUrl}</code>
             <button className="ghost" onClick={() => navigator.clipboard.writeText(overlayUrl)}>
@@ -660,7 +662,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Player ----------------------------------------------------------*/}
-        <Section title="Плеер" desc="Управление музыкой во время стрима.">
+        <Section title="Плеер" desc="Управление музыкой во время стрима." order={11}>
           <div className="player">
             <button
               className="pbtn pbtn-main"
@@ -734,7 +736,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Queue -----------------------------------------------------------*/}
-        <Section title="Очередь" desc="Заказы зрителей. Можно протестировать вручную.">
+        <Section title="Очередь" desc="Заказы зрителей. Можно протестировать вручную." order={10}>
           {np ? (
             <div className="now">
               {np.track.coverUrl && <img src={np.track.coverUrl} alt="" />}
@@ -822,7 +824,7 @@ export default function App(): JSX.Element {
         </Section>
 
         {/* Log -------------------------------------------------------------*/}
-        <Section title="Лог">
+        <Section title="Лог" order={13}>
           <div className="log" ref={logRef}>
             {logs.map((l, i) => (
               <div key={i} className={`log-line log-${l.level}`}>
