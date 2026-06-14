@@ -383,6 +383,20 @@ export default function App(): JSX.Element {
               </select>
             )}
           </div>
+
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={t.moderation}
+              onChange={(e) => patch({ twitch: { ...t, moderation: e.target.checked } })}
+            />
+            <span>Подтверждение запросов модераторами/владельцем</span>
+          </label>
+          <p className="muted small">
+            Включено: запрос <b>висит</b> в очереди наград Twitch и играет только после
+            «Принять»; «Отклонить» возвращает баллы (принимают в Twitch — Dashboard →
+            очередь наград, доступно и модерам). Выключено: трек встаёт в очередь сразу.
+          </p>
         </Section>
 
         {/* Yandex ----------------------------------------------------------*/}

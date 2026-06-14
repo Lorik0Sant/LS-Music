@@ -63,6 +63,11 @@ export interface Settings {
     /** Channel Points reward id we listen to (null = react to any redemption). */
     rewardId: string | null
     rewardTitle: string
+    /**
+     * Moderation mode: don't auto-fulfil. Requests stay PENDING in Twitch's
+     * reward queue; the streamer/mods accept (track plays) or reject (refund).
+     */
+    moderation: boolean
   }
   yandex: {
     token: string
@@ -154,7 +159,8 @@ export const DEFAULT_SETTINGS: Settings = {
     accessToken: null,
     refreshToken: null,
     rewardId: null,
-    rewardTitle: 'Заказать трек'
+    rewardTitle: 'Заказать трек',
+    moderation: false
   },
   yandex: { token: '', mode: 'stream' },
   spotify: { clientId: '', clientSecret: '', accessToken: null, refreshToken: null, mode: 'app' },

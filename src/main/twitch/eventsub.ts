@@ -7,7 +7,8 @@ import { fetchSelf, validateToken } from './auth'
 
 const EVENTSUB_URL = 'wss://eventsub.wss.twitch.tv/ws'
 const HELIX = 'https://api.twitch.tv/helix'
-const REDEMPTION_TYPE = 'channel.channel_points_custom_reward_redemption.add'
+const REDEMPTION_ADD = 'channel.channel_points_custom_reward_redemption.add'
+const REDEMPTION_UPDATE = 'channel.channel_points_custom_reward_redemption.update'
 
 class TwitchEventSub {
   private ws: WebSocket | null = null
@@ -94,40 +95,64 @@ class TwitchEventSub {
   }
 
   private onNotification(msg: any): void {
-    if (msg?.metadata?.subscription_type !== REDEMPTION_TYPE) return
-    const event = msg.payload.event
+    const type = msg?.metadata?.subscription_type
+    const event = msg?.payload?.event
+    if (!event) return
     const wantReward = loadSettings().twitch.rewardId
     if (wantReward && event.reward?.id !== wantReward) return
 
+    const moderation = loadSettings().twitch.moderation
     const query = String(event.user_input ?? '').trim()
     const requestedBy = event.user_name || event.user_login || 'зритель'
-    const redemption = { rewardId: event.reward?.id, redemptionId: event.id }
-    if (!query) {
-      bus.warn(`${requestedBy} активировал награду, но не указал трек`)
-      return
+
+    if (type === REDEMPTION_ADD) {
+      if (!query) {
+        bus.warn(`${requestedBy} активировал награду, но не указал трек`)
+        return
+      }
+      if (moderation) {
+        // Wait for the streamer/mods to accept it in Twitch's reward queue.
+        bus.info(`Запрос от ${requestedBy} ждёт подтверждения: «${query}»`)
+        return
+      }
+      // Auto mode: queue now, fulfil/refund the points ourselves.
+      const redemption = { rewardId: event.reward?.id, redemptionId: event.id }
+      bus.emit('request:track', { query, requestedBy, redemption })
+    } else if (type === REDEMPTION_UPDATE) {
+      // Only meaningful in moderation mode (otherwise we cause these ourselves).
+      if (!moderation) return
+      if (event.status === 'fulfilled') {
+        bus.info(`Запрос подтверждён: «${query}» (${requestedBy})`)
+        // No redemption ctx — Twitch already fulfilled it, don't touch points.
+        if (query) bus.emit('request:track', { query, requestedBy })
+      } else if (event.status === 'canceled') {
+        bus.info(`Запрос отклонён, баллы возвращены: «${query}» (${requestedBy})`)
+      }
     }
-    bus.emit('request:track', { query, requestedBy, redemption })
   }
 
   private async subscribe(): Promise<void> {
     const s = loadSettings().twitch
-    const res = await fetch(`${HELIX}/eventsub/subscriptions`, {
-      method: 'POST',
-      headers: {
-        'Client-Id': s.clientId,
-        Authorization: `Bearer ${s.accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        type: REDEMPTION_TYPE,
-        version: '1',
-        condition: { broadcaster_user_id: s.userId },
-        transport: { method: 'websocket', session_id: this.sessionId }
+    // Subscribe to both add (new redemptions) and update (accepted/rejected by mods).
+    for (const type of [REDEMPTION_ADD, REDEMPTION_UPDATE]) {
+      const res = await fetch(`${HELIX}/eventsub/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Client-Id': s.clientId,
+          Authorization: `Bearer ${s.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type,
+          version: '1',
+          condition: { broadcaster_user_id: s.userId },
+          transport: { method: 'websocket', session_id: this.sessionId }
+        })
       })
-    })
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(`Не удалось создать подписку EventSub (${res.status}): ${text}`)
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`Не удалось создать подписку EventSub ${type} (${res.status}): ${text}`)
+      }
     }
   }
 
