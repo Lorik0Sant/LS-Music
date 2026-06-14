@@ -166,15 +166,17 @@ a {
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  align-items: start;
+  column-count: 2;
+  column-gap: 18px;
 }
 @media (max-width: 820px) {
   .grid {
-    grid-template-columns: 1fr;
+    column-count: 1;
   }
+}
+.grid > .card {
+  break-inside: avoid;
+  margin-bottom: 18px;
 }
 
 .card {
