@@ -1,12 +1,18 @@
 appId: com.lsmusic.app
 productName: LS Music
 copyright: © LorikoSant
+# uiohook-napi ships prebuilt N-API binaries that work across Electron versions,
+# so skip electron-builder's from-source rebuild (no Visual Studio on this machine).
+npmRebuild: false
 directories:
   output: release
   buildResources: build
 files:
   - out/**/*
   - package.json
+asarUnpack:
+  # Native module — its prebuilt .node must live outside the asar to load.
+  - "**/node_modules/uiohook-napi/**"
 extraResources:
   - from: overlay
     to: overlay
