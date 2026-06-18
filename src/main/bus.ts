@@ -29,6 +29,8 @@ export interface BusEvents {
   log: (e: LogEntry) => void
   status: (s: AppStatus) => void
   'queue:update': (items: QueueItem[]) => void
+  /** Recently-played tracks changed (most-recent first). */
+  'history:update': (items: QueueItem[]) => void
   /** A viewer requested a track via Twitch Channel Points. */
   'request:track': (req: {
     query: string

@@ -33,6 +33,8 @@ const api = {
   providerLogout: (id: ProviderId): Promise<void> => ipcRenderer.invoke('provider:logout', id),
 
   queueList: (): Promise<QueueItem[]> => ipcRenderer.invoke('queue:list'),
+  queueHistory: (): Promise<QueueItem[]> => ipcRenderer.invoke('queue:history'),
+  queueReplay: (id: string): Promise<void> => ipcRenderer.invoke('queue:replay', id),
   queueSkip: (): Promise<void> => ipcRenderer.invoke('queue:skip'),
   playbackToggle: (): Promise<void> => ipcRenderer.invoke('playback:toggle'),
   queueClear: (): Promise<void> => ipcRenderer.invoke('queue:clear'),
@@ -47,6 +49,7 @@ const api = {
   onStatus: (cb: (s: AppStatus) => void) => sub('evt:status', cb),
   onLog: (cb: (e: LogEntry) => void) => sub('evt:log', cb),
   onQueue: (cb: (items: QueueItem[]) => void) => sub('evt:queue', cb),
+  onHistory: (cb: (items: QueueItem[]) => void) => sub('evt:history', cb),
   onTwitchAuth: (cb: (r: { ok: boolean; error?: string }) => void) => sub('evt:twitch-auth', cb)
 }
 

@@ -222,6 +222,14 @@ body {
   background: var(--accent);
   transition: width 0.25s linear;
 }
+.times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.45);
+}
 
 /* ===== Themes ============================================================ */
 
@@ -307,7 +315,8 @@ body[data-theme='minimal'] .title {
 body[data-theme='minimal'] .artist {
   font-size: 14px;
 }
-body[data-theme='minimal'] .progress {
+body[data-theme='minimal'] .progress,
+body[data-theme='minimal'] .times {
   display: none;
 }
 

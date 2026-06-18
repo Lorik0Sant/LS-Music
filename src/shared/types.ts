@@ -99,6 +99,13 @@ export interface Settings {
     playPause: string
     skip: string
   }
+  /** Anti-abuse limits on viewer requests. */
+  limits: {
+    /** Per-viewer cooldown between accepted requests (minutes). */
+    cooldown: { enabled: boolean; minutes: number }
+    /** Reject (and refund) tracks longer than this (minutes). */
+    maxDuration: { enabled: boolean; minutes: number }
+  }
 }
 
 export interface DeviceAuthInfo {
@@ -180,5 +187,9 @@ export const DEFAULT_SETTINGS: Settings = {
     displaySeconds: 0,
     theme: 'classic'
   },
-  hotkeys: { playPause: '', skip: '' }
+  hotkeys: { playPause: '', skip: '' },
+  limits: {
+    cooldown: { enabled: false, minutes: 5 },
+    maxDuration: { enabled: false, minutes: 10 }
+  }
 }

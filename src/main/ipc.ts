@@ -24,6 +24,7 @@ export function registerIpc(): void {
   bus.on('status', (s) => broadcast('evt:status', s))
   bus.on('log', (e) => broadcast('evt:log', e))
   bus.on('queue:update', (items) => broadcast('evt:queue', items))
+  bus.on('history:update', (items) => broadcast('evt:history', items))
 
   ipcMain.handle('settings:get', () => loadSettings())
 
@@ -148,6 +149,8 @@ export function registerIpc(): void {
   // ---- Queue --------------------------------------------------------------
   ipcMain.handle('playback:toggle', () => togglePaused())
   ipcMain.handle('queue:list', () => queue.list())
+  ipcMain.handle('queue:history', () => queue.getHistory())
+  ipcMain.handle('queue:replay', (_e, id: string) => queue.replay(id))
   ipcMain.handle('queue:skip', () => queue.skip())
   ipcMain.handle('queue:clear', () => queue.clear())
   ipcMain.handle('queue:remove', (_e, id: string) => queue.remove(id))
@@ -160,6 +163,6 @@ export function registerIpc(): void {
   })
   ipcMain.handle('app:check-updates', () => checkForUpdates(true))
   ipcMain.handle('queue:request', (_e, query: string) =>
-    queue.addRequest(query, 'тест')
+    queue.addRequest(query, 'тест', undefined, { bypassLimits: true })
   )
 }

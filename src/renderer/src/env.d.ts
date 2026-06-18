@@ -30,6 +30,8 @@ export interface LsApi {
   providerLogout(id: ProviderId): Promise<void>
 
   queueList(): Promise<QueueItem[]>
+  queueHistory(): Promise<QueueItem[]>
+  queueReplay(id: string): Promise<void>
   queueSkip(): Promise<void>
   playbackToggle(): Promise<void>
   queueClear(): Promise<void>
@@ -44,6 +46,7 @@ export interface LsApi {
   onStatus(cb: (s: AppStatus) => void): () => void
   onLog(cb: (e: LogEntry) => void): () => void
   onQueue(cb: (items: QueueItem[]) => void): () => void
+  onHistory(cb: (items: QueueItem[]) => void): () => void
   onTwitchAuth(cb: (r: { ok: boolean; error?: string }) => void): () => void
 }
 

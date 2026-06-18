@@ -9,6 +9,8 @@
   const artist = el('artist')
   const requester = el('requester')
   const bar = el('bar')
+  const tcur = el('tcur')
+  const trem = el('trem')
   const audio = el('audio')
 
   let current = null // current QueueItem
@@ -17,6 +19,62 @@
   let hideTimer = null
   let displaySeconds = 0
   let volume = 0.8
+
+  // ---- Progress / time-remaining ------------------------------------------
+  let tickTimer = null
+  let extStart = 0 // wall-clock ms when (external) playback started
+  let extPausedAt = 0 // wall-clock ms when paused (0 = not paused)
+  let extPausedTotal = 0 // accumulated paused ms
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0))
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    return m + ':' + String(s).padStart(2, '0')
+  }
+
+  // Best available {cur, dur} in seconds: real media time when we have it,
+  // else a wall-clock estimate from the track duration (covers external apps).
+  function progressInfo() {
+    const pb = (current && current.playback) || {}
+    if (pb.kind === 'audio' && audio.duration) return { cur: audio.currentTime, dur: audio.duration }
+    if (pb.kind === 'youtube' && ytReady && ytPlayer && ytPlayer.getDuration) {
+      try {
+        const d = ytPlayer.getDuration()
+        if (d > 0) return { cur: ytPlayer.getCurrentTime(), dur: d }
+      } catch (_) {
+        /* not ready */
+      }
+    }
+    const durMs = (current && current.track && current.track.durationMs) || 0
+    if (durMs > 0) {
+      const pausedExtra = extPausedAt ? Date.now() - extPausedAt : 0
+      const elapsed = (Date.now() - extStart - extPausedTotal - pausedExtra) / 1000
+      return { cur: elapsed, dur: durMs / 1000 }
+    }
+    return null
+  }
+
+  function tick() {
+    const p = progressInfo()
+    if (!p || !p.dur) return
+    const frac = Math.min(1, Math.max(0, p.cur / p.dur))
+    bar.style.width = frac * 100 + '%'
+    tcur.textContent = fmt(p.cur)
+    trem.textContent = '-' + fmt(p.dur - p.cur)
+  }
+
+  function startTick() {
+    stopTick()
+    tickTimer = setInterval(tick, 250)
+    tick()
+  }
+  function stopTick() {
+    if (tickTimer) {
+      clearInterval(tickTimer)
+      tickTimer = null
+    }
+  }
 
   // ---- YouTube IFrame player ----------------------------------------------
   let ytPlayer = null
@@ -96,6 +154,11 @@
     applyConfig(cfg)
 
     bar.style.width = '0%'
+    tcur.textContent = '0:00'
+    trem.textContent = '-0:00'
+    extStart = Date.now()
+    extPausedAt = 0
+    extPausedTotal = 0
     const pb = item.playback || {}
     stopYt()
     if (pb.kind === 'audio' && pb.url) {
@@ -118,6 +181,7 @@
     card.classList.add('visible')
     disc.classList.add('spinning')
     vinyl.classList.add('playing')
+    startTick()
 
     // Auto-hide the card after N seconds (audio keeps playing). 0 = whole track.
     clearTimeout(hideTimer)
@@ -129,6 +193,10 @@
   function stop() {
     current = null
     clearTimeout(hideTimer)
+    stopTick()
+    bar.style.width = '0%'
+    tcur.textContent = '0:00'
+    trem.textContent = '-0:00'
     audio.pause()
     audio.removeAttribute('src')
     audio.load()
@@ -138,9 +206,6 @@
     vinyl.classList.remove('playing')
   }
 
-  audio.addEventListener('timeupdate', () => {
-    if (audio.duration) bar.style.width = (audio.currentTime / audio.duration) * 100 + '%'
-  })
   audio.addEventListener('ended', () => {
     if (current) send({ type: 'ended', queueItemId: current.id })
   })
@@ -164,11 +229,16 @@
         /* ignore */
       }
     }
+    if (!extPausedAt) extPausedAt = Date.now() // freeze the wall-clock estimate
     disc.classList.remove('spinning')
   }
 
   function resume() {
     if (!current) return
+    if (extPausedAt) {
+      extPausedTotal += Date.now() - extPausedAt
+      extPausedAt = 0
+    }
     const pb = current.playback || {}
     if (pb.kind === 'youtube') {
       if (ytReady && ytPlayer) ytPlayer.playVideo()

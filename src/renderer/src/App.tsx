@@ -51,6 +51,7 @@ export default function App(): JSX.Element {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [status, setStatus] = useState<AppStatus | null>(null)
   const [queue, setQueue] = useState<QueueItem[]>([])
+  const [history, setHistory] = useState<QueueItem[]>([])
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [overlayUrl, setOverlayUrl] = useState('')
   const [rewards, setRewards] = useState<TwitchReward[]>([])
@@ -68,11 +69,13 @@ export default function App(): JSX.Element {
     window.api.getSettings().then(setSettings)
     window.api.getStatus().then(setStatus)
     window.api.queueList().then(setQueue)
+    window.api.queueHistory().then(setHistory)
     window.api.getOverlayUrl().then(setOverlayUrl)
     window.api.getVersion().then(setVersion)
     const offs = [
       window.api.onStatus(setStatus),
       window.api.onQueue(setQueue),
+      window.api.onHistory(setHistory),
       window.api.onLog((e) => setLogs((l) => [...l.slice(-200), e]))
     ]
     return () => offs.forEach((off) => off())
@@ -437,6 +440,92 @@ export default function App(): JSX.Element {
             «Отклонить» (баллы вернутся) или «Принять». Выключено — награда закрывается
             автоматически (вернуть баллы нельзя).
           </p>
+        </Section>
+
+        {/* Limits ----------------------------------------------------------*/}
+        <Section
+          title="Лимиты заказов"
+          desc="Защита от спама. При отказе баллы возвращаются (в режиме модерации — вручную в Twitch)."
+        >
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.limits.cooldown.enabled}
+              onChange={(e) =>
+                patch({
+                  limits: {
+                    ...settings.limits,
+                    cooldown: { ...settings.limits.cooldown, enabled: e.target.checked }
+                  }
+                })
+              }
+            />
+            <span>Кулдаун на зрителя — один заказ раз в N минут</span>
+          </label>
+          <div className="field">
+            <span>Минут между заказами</span>
+            <div className="row">
+              <input
+                type="number"
+                min={1}
+                style={{ width: 90 }}
+                disabled={!settings.limits.cooldown.enabled}
+                value={settings.limits.cooldown.minutes}
+                onChange={(e) =>
+                  patch({
+                    limits: {
+                      ...settings.limits,
+                      cooldown: {
+                        ...settings.limits.cooldown,
+                        minutes: Math.max(1, Number(e.target.value) || 1)
+                      }
+                    }
+                  })
+                }
+              />
+              <span className="muted small">мин.</span>
+            </div>
+          </div>
+
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.limits.maxDuration.enabled}
+              onChange={(e) =>
+                patch({
+                  limits: {
+                    ...settings.limits,
+                    maxDuration: { ...settings.limits.maxDuration, enabled: e.target.checked }
+                  }
+                })
+              }
+            />
+            <span>Лимит длины трека — отклонять слишком длинные</span>
+          </label>
+          <div className="field">
+            <span>Не длиннее</span>
+            <div className="row">
+              <input
+                type="number"
+                min={1}
+                style={{ width: 90 }}
+                disabled={!settings.limits.maxDuration.enabled}
+                value={settings.limits.maxDuration.minutes}
+                onChange={(e) =>
+                  patch({
+                    limits: {
+                      ...settings.limits,
+                      maxDuration: {
+                        ...settings.limits.maxDuration,
+                        minutes: Math.max(1, Number(e.target.value) || 1)
+                      }
+                    }
+                  })
+                }
+              />
+              <span className="muted small">мин.</span>
+            </div>
+          </div>
         </Section>
 
         {/* Yandex ----------------------------------------------------------*/}
@@ -827,8 +916,32 @@ export default function App(): JSX.Element {
           </div>
         </Section>
 
+        {/* History ---------------------------------------------------------*/}
+        <Section title="История" desc="Последние сыгранные треки — можно вернуть в очередь." order={4}>
+          <ol className="queue">
+            {history.map((h) => (
+              <li key={h.id}>
+                <span className="q-title">
+                  {h.track.artists.join(', ')} — {h.track.title}
+                  <span className="muted small"> · {h.requestedBy}</span>
+                </span>
+                <span className="q-actions">
+                  <button
+                    className="icon"
+                    title="Сыграть снова"
+                    onClick={() => window.api.queueReplay(h.id)}
+                  >
+                    ↻
+                  </button>
+                </span>
+              </li>
+            ))}
+            {history.length === 0 && <li className="muted">Пока ничего не играло</li>}
+          </ol>
+        </Section>
+
         {/* Log -------------------------------------------------------------*/}
-        <Section title="Лог" order={4}>
+        <Section title="Лог" order={5}>
           <div className="log" ref={logRef}>
             {logs.map((l, i) => (
               <div key={i} className={`log-line log-${l.level}`}>
