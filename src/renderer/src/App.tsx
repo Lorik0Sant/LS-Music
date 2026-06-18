@@ -442,92 +442,6 @@ export default function App(): JSX.Element {
           </p>
         </Section>
 
-        {/* Limits ----------------------------------------------------------*/}
-        <Section
-          title="Лимиты заказов"
-          desc="Защита от спама. При отказе баллы возвращаются (в режиме модерации — вручную в Twitch)."
-        >
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.limits.cooldown.enabled}
-              onChange={(e) =>
-                patch({
-                  limits: {
-                    ...settings.limits,
-                    cooldown: { ...settings.limits.cooldown, enabled: e.target.checked }
-                  }
-                })
-              }
-            />
-            <span>Кулдаун на зрителя — один заказ раз в N минут</span>
-          </label>
-          <div className="field">
-            <span>Минут между заказами</span>
-            <div className="row">
-              <input
-                type="number"
-                min={1}
-                style={{ width: 90 }}
-                disabled={!settings.limits.cooldown.enabled}
-                value={settings.limits.cooldown.minutes}
-                onChange={(e) =>
-                  patch({
-                    limits: {
-                      ...settings.limits,
-                      cooldown: {
-                        ...settings.limits.cooldown,
-                        minutes: Math.max(1, Number(e.target.value) || 1)
-                      }
-                    }
-                  })
-                }
-              />
-              <span className="muted small">мин.</span>
-            </div>
-          </div>
-
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.limits.maxDuration.enabled}
-              onChange={(e) =>
-                patch({
-                  limits: {
-                    ...settings.limits,
-                    maxDuration: { ...settings.limits.maxDuration, enabled: e.target.checked }
-                  }
-                })
-              }
-            />
-            <span>Лимит длины трека — отклонять слишком длинные</span>
-          </label>
-          <div className="field">
-            <span>Не длиннее</span>
-            <div className="row">
-              <input
-                type="number"
-                min={1}
-                style={{ width: 90 }}
-                disabled={!settings.limits.maxDuration.enabled}
-                value={settings.limits.maxDuration.minutes}
-                onChange={(e) =>
-                  patch({
-                    limits: {
-                      ...settings.limits,
-                      maxDuration: {
-                        ...settings.limits.maxDuration,
-                        minutes: Math.max(1, Number(e.target.value) || 1)
-                      }
-                    }
-                  })
-                }
-              />
-              <span className="muted small">мин.</span>
-            </div>
-          </div>
-        </Section>
-
         {/* Yandex ----------------------------------------------------------*/}
         <Section title="Яндекс.Музыка" desc="Просто войдите в свой аккаунт — токен подтянется сам.">
           {status.yandex === 'connected' || settings.yandex.token ? (
@@ -649,6 +563,92 @@ export default function App(): JSX.Element {
               приложении Spotify с рекламой; с Premium — без.
             </p>
           </details>
+        </Section>
+
+        {/* Limits ----------------------------------------------------------*/}
+        <Section
+          title="Лимиты заказов"
+          desc="Защита от спама. При отказе баллы возвращаются (в режиме модерации — вручную в Twitch)."
+        >
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.limits.cooldown.enabled}
+              onChange={(e) =>
+                patch({
+                  limits: {
+                    ...settings.limits,
+                    cooldown: { ...settings.limits.cooldown, enabled: e.target.checked }
+                  }
+                })
+              }
+            />
+            <span>Кулдаун на зрителя — один заказ раз в N минут</span>
+          </label>
+          <div className="field">
+            <span>Минут между заказами</span>
+            <div className="row">
+              <input
+                type="number"
+                min={1}
+                style={{ width: 90 }}
+                disabled={!settings.limits.cooldown.enabled}
+                value={settings.limits.cooldown.minutes}
+                onChange={(e) =>
+                  patch({
+                    limits: {
+                      ...settings.limits,
+                      cooldown: {
+                        ...settings.limits.cooldown,
+                        minutes: Math.max(1, Number(e.target.value) || 1)
+                      }
+                    }
+                  })
+                }
+              />
+              <span className="muted small">мин.</span>
+            </div>
+          </div>
+
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.limits.maxDuration.enabled}
+              onChange={(e) =>
+                patch({
+                  limits: {
+                    ...settings.limits,
+                    maxDuration: { ...settings.limits.maxDuration, enabled: e.target.checked }
+                  }
+                })
+              }
+            />
+            <span>Лимит длины трека — отклонять слишком длинные</span>
+          </label>
+          <div className="field">
+            <span>Не длиннее</span>
+            <div className="row">
+              <input
+                type="number"
+                min={1}
+                style={{ width: 90 }}
+                disabled={!settings.limits.maxDuration.enabled}
+                value={settings.limits.maxDuration.minutes}
+                onChange={(e) =>
+                  patch({
+                    limits: {
+                      ...settings.limits,
+                      maxDuration: {
+                        ...settings.limits.maxDuration,
+                        minutes: Math.max(1, Number(e.target.value) || 1)
+                      }
+                    }
+                  })
+                }
+              />
+              <span className="muted small">мин.</span>
+            </div>
+          </div>
         </Section>
 
         </div>

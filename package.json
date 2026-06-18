@@ -1,6 +1,6 @@
 {
   "name": "ls-music",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "description": "Twitch Channel Points music player with a vinyl-record overlay for OBS (Yandex Music, Spotify)",
   "author": "LorikoSant",
   "license": "MIT",
